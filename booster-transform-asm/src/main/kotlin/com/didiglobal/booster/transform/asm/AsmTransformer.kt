@@ -28,6 +28,8 @@ class AsmTransformer : Transformer {
 
     internal val transformers: Collection<ClassTransformer>
 
+    private lateinit var context: ClassTransformContext
+
     /*
      * Preload transformers as List to fix NoSuchElementException caused by ServiceLoader in parallel mode
      */
@@ -48,9 +50,10 @@ class AsmTransformer : Transformer {
     }
 
     override fun onPreTransform(context: TransformContext) {
+        this.context = ClassTransformContext(context)
         this.transformers.forEach { transformer ->
             this.threadMxBean.sumCpuTime(transformer) {
-                transformer.onPreTransform(context)
+                transformer.onPreTransform(this.context)
             }
         }
     }
@@ -61,7 +64,7 @@ class AsmTransformer : Transformer {
                 ClassReader(bytecode).accept(klass, 0)
             }) { klass, transformer ->
                 this.threadMxBean.sumCpuTime(transformer) {
-                    transformer.transform(context, klass)
+                    transformer.transform(this.context, klass)
                 }
             }.accept(writer)
         }.toByteArray()
@@ -70,7 +73,7 @@ class AsmTransformer : Transformer {
     override fun onPostTransform(context: TransformContext) {
         this.transformers.forEach { transformer ->
             this.threadMxBean.sumCpuTime(transformer) {
-                transformer.onPostTransform(context)
+                transformer.onPostTransform(this.context)
             }
         }
 

@@ -77,7 +77,7 @@ class ThreadTransformer : ClassTransformer {
     }
 
     private fun MethodInsnNode.transformInvokeVirtual(context: TransformContext, klass: ClassNode, method: MethodNode) {
-        if (context.klassPool.get(THREAD).isAssignableFrom(this.owner)) {
+        if (context.classHierarchy.isInheritFrom(this.owner, THREAD)) {
             when ("${this.name}${this.desc}") {
                 "start()V" -> {
                     method.instructions.insertBefore(this, LdcInsnNode(makeThreadName(klass.className)))

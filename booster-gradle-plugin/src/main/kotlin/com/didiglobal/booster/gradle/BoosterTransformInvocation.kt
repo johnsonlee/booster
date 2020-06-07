@@ -14,8 +14,8 @@ import com.android.build.api.transform.TransformInput
 import com.android.build.api.transform.TransformInvocation
 import com.android.build.api.transform.TransformOutputProvider
 import com.didiglobal.booster.kotlinx.NCPU
-import com.didiglobal.booster.transform.AbstractKlassPool
 import com.didiglobal.booster.transform.ArtifactManager
+import com.didiglobal.booster.transform.ClassHierarchy
 import com.didiglobal.booster.transform.TransformContext
 import com.didiglobal.booster.transform.artifacts
 import com.didiglobal.booster.transform.util.transform
@@ -51,8 +51,6 @@ internal class BoosterTransformInvocation(private val delegate: TransformInvocat
 
     override val artifacts = this
 
-    override val klassPool: AbstractKlassPool = object : AbstractKlassPool(compileClasspath, transform.bootKlassPool) {}
-
     override val applicationId = delegate.applicationId
 
     override val originalApplicationId = delegate.originalApplicationId
@@ -60,6 +58,15 @@ internal class BoosterTransformInvocation(private val delegate: TransformInvocat
     override val isDebuggable = variant.buildType.isDebuggable
 
     override val isDataBindingEnabled = delegate.isDataBindingEnabled
+
+    override val classHierarchy = object : ClassHierarchy {
+        override fun contains(name: String) = false
+        override fun isInheritFrom(child: String, parent: String) = false
+        override fun isInheritFromInterface(child: String, parent: String) = false
+        override fun isInheritFromClass(child: String, parent: String) = false
+        override fun getSuperClasses(clazz: String) = emptySet<String>()
+        override fun iterator() = emptyList<String>().iterator()
+    }
 
     override fun hasProperty(name: String) = project.hasProperty(name)
 
@@ -158,10 +165,10 @@ internal class BoosterTransformInvocation(private val delegate: TransformInvocat
                     project.logger.info("Deleting $file")
                     outputProvider?.let { provider ->
                         provider.getContentLocation(dirInput.name, dirInput.contentTypes, dirInput.scopes, Format.DIRECTORY).parentFile.listFiles()?.asSequence()
-                            ?.filter { it.isDirectory }
-                            ?.map { File(it, dirInput.file.toURI().relativize(file.toURI()).path) }
-                            ?.filter { it.exists() }
-                            ?.forEach { it.delete() }
+                                ?.filter { it.isDirectory }
+                                ?.map { File(it, dirInput.file.toURI().relativize(file.toURI()).path) }
+                                ?.filter { it.exists() }
+                                ?.forEach { it.delete() }
                     }
                     file.delete()
                 }

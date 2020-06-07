@@ -1,4 +1,4 @@
-package com.didiglobal.booster.cha
+package com.didiglobal.booster.transform.asm.cha
 
 import com.didiglobal.booster.transform.asm.className
 import org.objectweb.asm.tree.ClassNode

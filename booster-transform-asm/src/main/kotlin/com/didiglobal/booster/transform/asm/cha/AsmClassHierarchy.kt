@@ -1,5 +1,6 @@
-package com.didiglobal.booster.cha
+package com.didiglobal.booster.transform.asm.cha
 
+import com.didiglobal.booster.transform.ClassHierarchy
 import com.didiglobal.booster.transform.asm.isFinal
 import com.didiglobal.booster.transform.asm.isInterface
 import org.objectweb.asm.tree.ClassNode
@@ -8,10 +9,12 @@ import java.util.Objects
 import java.util.concurrent.ConcurrentHashMap
 
 /**
+ * Represents class hierarchy base on ASM
+ *
  * @author johnsonlee
  */
 @Suppress("MemberVisibilityCanBePrivate")
-class ClassHierarchy(private val classSet: ClassSet) {
+class AsmClassHierarchy(private val classSet: ClassSet) : ClassHierarchy {
 
     private val unresolved = ConcurrentHashMap.newKeySet<String>()
 
@@ -36,10 +39,35 @@ class ClassHierarchy(private val classSet: ClassSet) {
         else -> isInheritFromClass(child, parent)
     }
 
-    fun isInheritFrom(child: String, parent: String): Boolean {
+    override fun contains(name: String) = null != get(name)
+
+    override fun isInheritFrom(child: String, parent: String): Boolean {
         val childClass = this[child] ?: return false
         val parentClass = this[parent] ?: return false
         return isInheritFrom(childClass, parentClass)
+    }
+
+    override fun isInheritFromInterface(child: String, parent: String): Boolean {
+        val childClass = this[child] ?: return false
+        val parentClass = this[parent] ?: return false
+        return isInheritFromInterface(childClass, parentClass)
+    }
+
+    override fun isInheritFromClass(child: String, parent: String): Boolean {
+        val childClass = this[child] ?: return false
+        val parentClass = this[parent] ?: return false
+        return isInheritFromClass(childClass, parentClass)
+    }
+
+    override fun getSuperClasses(clazz: String): Set<String> {
+        val classNode = this[clazz] ?: return emptySet()
+        return getSuperClasses(classNode).map(ClassNode::name).toSet()
+    }
+
+    override fun iterator(): Iterator<String> = object : Iterator<String> {
+        val delegate = classSet.iterator()
+        override fun hasNext() = delegate.hasNext()
+        override fun next() = delegate.next().name
     }
 
     fun isInheritFrom(child: String, parent: ClassNode) = (!parent.isFinal) && this[child]?.let { childClass ->
@@ -80,7 +108,7 @@ class ClassHierarchy(private val classSet: ClassSet) {
 
     fun getSuperClasses(clazz: ClassNode): Set<ClassNode> {
         if (clazz.superName == null) {
-            return emptySet<ClassNode>()
+            return emptySet()
         }
 
         if (clazz.superName == JAVA_LANG_OBJECT) {

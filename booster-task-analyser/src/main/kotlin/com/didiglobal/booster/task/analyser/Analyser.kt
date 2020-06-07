@@ -1,10 +1,10 @@
 package com.didiglobal.booster.task.analyser
 
 import com.didiglobal.booster.aapt2.metadata
-import com.didiglobal.booster.cha.ClassHierarchy
-import com.didiglobal.booster.cha.ClassSet
-import com.didiglobal.booster.cha.JAVA_LANG_OBJECT
-import com.didiglobal.booster.cha.fold
+import com.didiglobal.booster.transform.asm.cha.AsmClassHierarchy
+import com.didiglobal.booster.transform.asm.cha.ClassSet
+import com.didiglobal.booster.transform.asm.cha.JAVA_LANG_OBJECT
+import com.didiglobal.booster.transform.asm.cha.fold
 import com.didiglobal.booster.cha.graph.CallGraph
 import com.didiglobal.booster.cha.graph.dot.DotGraph
 import com.didiglobal.booster.kotlinx.NCPU
@@ -61,7 +61,7 @@ class Analyser(
 
     private val classes = providedClasses + compileClasses
 
-    private val hierarchy = ClassHierarchy(classes)
+    private val hierarchy = AsmClassHierarchy(classes)
 
     /**
      * The global call graph of whole project

@@ -1,4 +1,4 @@
-package com.didiglobal.booster.cha
+package com.didiglobal.booster.transform.asm.cha
 
 import com.didiglobal.booster.kotlinx.green
 import com.didiglobal.booster.kotlinx.search

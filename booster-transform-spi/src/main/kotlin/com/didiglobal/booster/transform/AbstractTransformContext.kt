@@ -7,8 +7,7 @@ abstract class AbstractTransformContext(
         final override val name: String,
         final override val bootClasspath: Collection<File>,
         final override val compileClasspath: Collection<File> = emptyList(),
-        final override val runtimeClasspath: Collection<File> = emptyList(),
-        val bootKlassPool: KlassPool = makeKlassPool(bootClasspath)
+        final override val runtimeClasspath: Collection<File> = emptyList()
 ) : TransformContext {
 
     override val projectDir = File(System.getProperty("user.dir"))
@@ -24,8 +23,6 @@ abstract class AbstractTransformContext(
 
     override val artifacts = object : ArtifactManager {}
 
-    override val klassPool = object : AbstractKlassPool(runtimeClasspath, bootKlassPool) {}
-
     override val originalApplicationId = applicationId
 
     override val isDebuggable = true
@@ -34,11 +31,4 @@ abstract class AbstractTransformContext(
 
     override fun hasProperty(name: String) = false
 
-}
-
-private fun makeKlassPool(bootClasspath: Collection<File>): KlassPool {
-    return when {
-        bootClasspath.isEmpty() -> object : AbstractKlassPool(bootClasspath) {}
-        else -> object : AbstractKlassPool(bootClasspath) {}
-    }
 }

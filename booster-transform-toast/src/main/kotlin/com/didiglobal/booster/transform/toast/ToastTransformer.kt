@@ -3,7 +3,6 @@ package com.didiglobal.booster.transform.toast
 import com.didiglobal.booster.kotlinx.asIterable
 import com.didiglobal.booster.kotlinx.file
 import com.didiglobal.booster.kotlinx.touch
-import com.didiglobal.booster.transform.Klass
 import com.didiglobal.booster.transform.TransformContext
 import com.didiglobal.booster.transform.asm.ClassTransformer
 import com.google.auto.service.AutoService
@@ -38,7 +37,7 @@ class ToastTransformer : ClassTransformer {
 
         klass.methods.forEach { method ->
             method.instructions?.iterator()?.asIterable()?.filterIsInstance(MethodInsnNode::class.java)?.filter {
-                it.opcode == Opcodes.INVOKEVIRTUAL && it.name == "show" && it.desc == "()V" && (it.owner == TOAST || context.klassPool.get(TOAST).isAssignableFrom(it.owner))
+                it.opcode == Opcodes.INVOKEVIRTUAL && it.name == "show" && it.desc == "()V" && (it.owner == TOAST || context.classHierarchy.isInheritFrom(it.owner, TOAST))
             }?.forEach {
                 it.optimize(klass, method)
             }

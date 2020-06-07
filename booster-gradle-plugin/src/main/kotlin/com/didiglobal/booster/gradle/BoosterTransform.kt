@@ -7,7 +7,6 @@ import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformManager.SCOPE_FULL_PROJECT
 import com.didiglobal.booster.annotations.Priority
-import com.didiglobal.booster.transform.AbstractKlassPool
 import com.didiglobal.booster.transform.Transformer
 import org.gradle.api.Project
 import java.util.ServiceLoader
@@ -27,17 +26,6 @@ open class BoosterTransform(val project: Project) : Transform() {
     }
 
     private val android: BaseExtension = project.getAndroid()
-
-    private lateinit var androidKlassPool: AbstractKlassPool
-
-    init {
-        project.afterEvaluate {
-            androidKlassPool = object : AbstractKlassPool(android.bootClasspath) {}
-        }
-    }
-
-    val bootKlassPool: AbstractKlassPool
-        get() = androidKlassPool
 
     override fun getName() = "booster"
 

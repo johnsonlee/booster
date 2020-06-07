@@ -63,7 +63,7 @@ class ResCheckTransformer : ClassTransformer {
         attachBaseContext.instructions?.apply {
             iterator().asIterable().find {
                 it.opcode == INVOKESPECIAL
-                        && context.klassPool.get(APPLICATION).isAssignableFrom((it as MethodInsnNode).owner)
+                        && context.classHierarchy.isInheritFrom((it as MethodInsnNode).owner, APPLICATION)
                         && "${it.name}${it.desc}" == "attachBaseContext(Landroid/content/Context;)V"
             }?.let {
                 insert(it, InsnList().apply {
@@ -83,7 +83,7 @@ class ResCheckTransformer : ClassTransformer {
 
         onCreate.instructions?.apply {
             iterator().asIterable().find {
-                it.opcode == INVOKESPECIAL && context.klassPool.get(APPLICATION).isAssignableFrom((it as MethodInsnNode).owner) && "${it.name}${it.desc}" == "onCreate()V"
+                it.opcode == INVOKESPECIAL && context.classHierarchy.isInheritFrom((it as MethodInsnNode).owner, APPLICATION) && "${it.name}${it.desc}" == "onCreate()V"
             }.let {
                 insert(it, InsnList().apply {
                     add(VarInsnNode(ALOAD, 0))

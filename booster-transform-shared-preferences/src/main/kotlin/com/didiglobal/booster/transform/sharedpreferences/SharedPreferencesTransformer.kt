@@ -56,7 +56,7 @@ class SharedPreferencesTransformer : ClassTransformer {
                     CONTEXT_GET_SHARED_PREFERENCES to SHADOW_CONTEXT_GET_SHARED_PREFERENCES,
                     ACTIVITY_GET_PREFERENCES to SHADOW_ACTIVITY_GET_PREFERENCES
                 ).forEach { (original, shadow) ->
-                    if (it.opcode == original.opcode && it.name == original.name && it.desc == original.desc && context.klassPool.get(original.owner).isAssignableFrom(it.owner)) {
+                    if (it.opcode == original.opcode && it.name == original.name && it.desc == original.desc && context.classHierarchy.isInheritFrom(it.owner, original.owner)) {
                         logger.println(" * ${shadow.owner}${shadow.name}${shadow.desc} => ${it.owner}.${it.name}${it.desc}: ${klass.name}.${method.name}${method.desc}")
                         it.opcode = shadow.opcode
                         it.owner = shadow.owner

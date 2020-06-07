@@ -55,11 +55,6 @@ interface TransformContext {
     val artifacts: ArtifactManager
 
     /**
-     * The class pool
-     */
-    val klassPool: KlassPool
-
-    /**
      * The application identifier
      */
     val applicationId: String
@@ -78,6 +73,11 @@ interface TransformContext {
      * is dataBinding enabled or not
      */
     val isDataBindingEnabled: Boolean
+
+    /**
+     * The type hierarchy for Class Hierarchy Analysis (CHA)
+     */
+    val classHierarchy: ClassHierarchy
 
     /**
      * Check if has the specified property. Generally, the property is equivalent to project property

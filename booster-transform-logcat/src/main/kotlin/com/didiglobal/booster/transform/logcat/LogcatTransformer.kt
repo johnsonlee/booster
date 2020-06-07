@@ -47,7 +47,7 @@ class LogcatTransformer : ClassTransformer {
             method.instructions?.iterator()?.asIterable()?.filter {
                 when (it.opcode) {
                     INVOKESTATIC -> (it as MethodInsnNode).owner == LOGCAT && SHADOW_LOG_METHODS.contains(it.name)
-                    INVOKEVIRTUAL -> (it as MethodInsnNode).name == "printStackTrace" && it.desc == "()V" && context.klassPool.get(THROWABLE).isAssignableFrom(it.owner)
+                    INVOKEVIRTUAL -> (it as MethodInsnNode).name == "printStackTrace" && it.desc == "()V" && context.classHierarchy.isInheritFrom(it.owner, THROWABLE)
                     GETSTATIC -> (it as FieldInsnNode).owner == SYSTEM && (it.name == "out" || it.name == "err")
                     else -> false
                 }

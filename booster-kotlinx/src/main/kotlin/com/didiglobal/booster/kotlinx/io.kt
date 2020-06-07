@@ -6,6 +6,8 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
 import java.io.Reader
+import java.math.BigInteger
+import java.security.MessageDigest
 
 fun File.file(vararg path: String) = File(this, path.joinToString(File.separator))
 
@@ -26,6 +28,17 @@ fun File.touch(): File {
  * Return the first line of file
  */
 fun File.head(): String? = inputStream().use { it.head() }
+
+fun File.md5(): String = inputStream().use {
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    val digest = MessageDigest.getInstance("MD5")
+
+    while (-1 != it.read(buffer, 0, buffer.size)) {
+        digest.update(buffer)
+    }
+
+    return BigInteger(1, digest.digest()).toString(16).padStart(32, '0')
+}
 
 /**
  * Returns the first line of input stream
