@@ -102,9 +102,14 @@ fun BaseVariant.getTaskName(prefix: String, suffix: String): String = AGP.run {
     getTaskName(prefix, suffix)
 }
 
-val BaseVariant.minSdkVersion: AndroidVersion
+val BaseVariant.minSdkVersion: Int
     get() = AGP.run {
         minSdkVersion
+    }
+
+val BaseVariant.targetSdkVersion: Int
+    get() = AGP.run {
+        targetSdkVersion
     }
 
 val BaseVariant.variantType: VariantType

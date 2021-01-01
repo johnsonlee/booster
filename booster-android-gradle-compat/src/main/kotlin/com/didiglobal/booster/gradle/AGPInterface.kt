@@ -66,9 +66,9 @@ interface AGPInterface {
 
     val BaseVariant.allArtifacts: Map<String, Collection<File>>
 
-    val BaseVariant.minSdkVersion: AndroidVersion
+    val BaseVariant.minSdkVersion: Int
 
-    val BaseVariant.targetSdkVersion: ApiVersion
+    val BaseVariant.targetSdkVersion: Int
 
     val BaseVariant.variantType: VariantType
 

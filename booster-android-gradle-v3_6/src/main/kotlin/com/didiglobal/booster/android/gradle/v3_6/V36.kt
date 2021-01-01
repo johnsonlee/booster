@@ -15,11 +15,8 @@ import com.android.build.gradle.internal.scope.AnchorOutputType
 import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.VariantType
-import com.android.builder.model.ApiVersion
-import com.android.sdklib.AndroidVersion
 import com.android.sdklib.BuildToolInfo
 import com.didiglobal.booster.android.gradle.v3_6.V36.variantScope
 import com.didiglobal.booster.gradle.AGPInterface
@@ -122,11 +119,11 @@ object V36 : AGPInterface {
             it.key to artifacts
         }.toMap(TreeMap())
 
-    override val BaseVariant.minSdkVersion: AndroidVersion
-        get() = variantData.variantConfiguration.minSdkVersion
+    override val BaseVariant.minSdkVersion: Int
+        get() = variantData.variantConfiguration.minSdkVersion.apiLevel
 
-    override val BaseVariant.targetSdkVersion: ApiVersion
-        get() = variantData.variantConfiguration.targetSdkVersion
+    override val BaseVariant.targetSdkVersion: Int
+        get() = variantData.variantConfiguration.targetSdkVersion.apiLevel
 
     override val BaseVariant.variantType: VariantType
         get() = variantData.type

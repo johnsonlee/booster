@@ -19,8 +19,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.VariantType
-import com.android.builder.model.ApiVersion
-import com.android.sdklib.AndroidVersion
 import com.android.sdklib.BuildToolInfo
 import com.didiglobal.booster.gradle.AGPInterface
 import org.gradle.api.Project
@@ -131,14 +129,11 @@ object V42 : AGPInterface {
             it.key to artifacts
         }.toMap(TreeMap())
 
-    override val BaseVariant.minSdkVersion: AndroidVersion
-        get() = component.minSdkVersion.run {
-            @Suppress("UnstableApiUsage")
-            AndroidVersion(apiLevel, codename)
-        }
+    override val BaseVariant.minSdkVersion: Int
+        get() = component.minSdkVersion.apiLevel
 
-    override val BaseVariant.targetSdkVersion: ApiVersion
-        get() = component.targetSdkVersion
+    override val BaseVariant.targetSdkVersion: Int
+        get() = component.targetSdkVersion.apiLevel
 
     override val BaseVariant.variantType: VariantType
         get() = component.variantType
