@@ -40,7 +40,7 @@ open class AnalyserTask : AbstractTask() {
 
         val output = project.projectDir.file("build", "reports", Build.ARTIFACT, variant.dirName)
 
-        Analyser(variant.extension.bootClasspath, classpath, variant.artifacts, project.properties).analyse(output)
+        Analyser(variant.applicationId, variant.extension.bootClasspath, classpath, variant.artifacts, project.properties).analyse(output)
     }
 
 }

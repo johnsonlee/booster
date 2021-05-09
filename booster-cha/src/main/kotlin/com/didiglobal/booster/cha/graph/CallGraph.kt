@@ -30,7 +30,13 @@ class CallGraph private constructor(private val edges: Map<Node, Set<Node>>, val
             listOf(it.from, it.to)
         }.flatten().toSet()
 
-    operator fun get(node: Node): Set<Node> = Collections.unmodifiableSet(edges[node] ?: emptySet())
+    operator fun get(from: Node?, to: Node? = null): Set<Node> = when {
+        from == null && to == null -> emptySet()
+        to == null -> Collections.unmodifiableSet(edges[from] ?: emptySet())
+        from == null -> edges.entries.filter { (_, v) -> to in v }.map(Map.Entry<Node, Set<Node>>::key).toSet()
+        else -> edges[from]?.takeIf { to in it }?.let { Collections.singleton(to) } ?: emptySet()
+    }
+
 
     /**
      * Print this call graph
@@ -45,6 +51,13 @@ class CallGraph private constructor(private val edges: Map<Node, Set<Node>>, val
                 Edge(pair.key, it)
             }.toSet()
         }.flatten().iterator()
+    }
+
+    fun newBuilder(): Builder {
+        val entries = edges.entries.map { (k, v) ->
+            k to mutableSetOf(*v.toTypedArray())
+        }.toTypedArray()
+        return Builder(mutableMapOf(*entries))
     }
 
     open class Node internal constructor(val type: String, val name: String, val desc: String, val args: String) {
@@ -99,11 +112,10 @@ class CallGraph private constructor(private val edges: Map<Node, Set<Node>>, val
 
     }
 
-    class Builder {
-
-        private val edges = ConcurrentHashMap<Node, MutableSet<Node>>()
-
-        private var title = ""
+    class Builder constructor(
+            private val edges: MutableMap<Node, MutableSet<Node>> = ConcurrentHashMap(),
+            private var title: String = ""
+    ) {
 
         fun getTitle() = title
 

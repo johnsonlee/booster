@@ -44,4 +44,7 @@ interface ClassSet : Set<ClassNode>, Closeable {
 
 }
 
+@Deprecated("", replaceWith = ReplaceWith("flatten"))
 fun Iterable<ClassSet>.fold() = ClassSet.of(this)
+
+fun Iterable<ClassSet>.flatten() = ClassSet.of(this)
