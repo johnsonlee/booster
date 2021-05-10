@@ -77,4 +77,8 @@ public class ContextWrapper extends Context {
         throw new RuntimeException("Stub!");
     }
 
+    public ApplicationInfo getApplicationInfo() {
+        throw new RuntimeException("Stub!");
+    }
+
 }
