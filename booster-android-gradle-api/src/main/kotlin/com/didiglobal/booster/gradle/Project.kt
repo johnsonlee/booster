@@ -17,8 +17,17 @@ inline fun <reified T : BaseExtension> Project.getAndroid(): T = extensions.getB
 val Project.gradleVersion: Revision
     get() = Revision.parseRevision(gradle.gradleVersion)
 
+@Deprecated(
+        message = "Use isAapt2Enabled instead",
+        replaceWith = ReplaceWith(
+                expression = "isAapt2Enabled"
+        )
+)
 val Project.aapt2Enabled: Boolean
-    get() = AGP.run { aapt2Enabled }
+    get() = AGP.run { isAapt2Enabled }
+
+val Project.isAapt2Enabled: Boolean
+    get() = AGP.run { isAapt2Enabled }
 
 @Suppress("UNCHECKED_CAST")
 fun <T> Project.getProperty(name: String, defaultValue: T): T {
