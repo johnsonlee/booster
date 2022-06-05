@@ -236,6 +236,7 @@ internal class BoosterTransformInvocation(
 
     private fun QualifiedContent.transform(output: File) {
         outputs += output
+        project.logger.info("Transforming $file => $output")
         this.file.transform(output) { bytecode ->
             bytecode.transform()
         }
