@@ -37,6 +37,20 @@ open class ReferenceAnalysisTask : DefaultTask(), Reporting<ReferenceReports> {
 
     @TaskAction
     fun analyse() {
+        if ((!reports.html.isEnabled) && (!reports.dot.isEnabled) && (!reports.json.isEnabled)) {
+            logger.warn("""
+                Please enable reference analysis reports with following configuration:
+                
+                tasks.withType(${javaClass.simpleName}) {
+                    reports {
+                        html.enabled = true
+                        json.enabled = true
+                        dot.enabled = true
+                    }
+                }
+            """.trimIndent())
+        }
+
         val graph = ReferenceAnalyser(project, variant).analyse()
         val executor = Executors.newFixedThreadPool(reports.size.coerceAtMost(NCPU))
 
