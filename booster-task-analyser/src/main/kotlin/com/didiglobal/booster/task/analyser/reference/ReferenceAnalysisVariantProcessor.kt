@@ -12,16 +12,13 @@ import com.didiglobal.booster.gradle.isJava
 import com.didiglobal.booster.gradle.isJavaLibrary
 import com.didiglobal.booster.gradle.javaCompilerTaskProvider
 import com.didiglobal.booster.gradle.project
-import com.didiglobal.booster.kotlinx.file
-import com.didiglobal.booster.task.analyser.Build
+import com.didiglobal.booster.task.analyser.configureReportConvention
 import com.didiglobal.booster.task.spi.VariantProcessor
 import com.google.auto.service.AutoService
 import org.gradle.api.Project
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.reporting.ReportingExtension
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 
 @AutoService(VariantProcessor::class)
 class ReferenceAnalysisVariantProcessor : VariantProcessor {
@@ -53,7 +50,7 @@ private fun Project.setupJava(prerequisites: List<TaskProvider<*>>) {
         it.description = "Analyses class reference for Java projects"
         it.group = "booster"
         it.variant = DEFAULT_VARIANT
-        it.configureReportConvention(DEFAULT_VARIANT)
+        it.configureReportConvention("reference", DEFAULT_VARIANT)
     }.dependsOn(prerequisites)
 }
 
@@ -67,19 +64,10 @@ private fun Project.setupAndroid(prerequisites: List<TaskProvider<*>>) {
             it.description = "Analyses class reference for Android project"
             it.group = "booster"
             it.variant = variant.name
-            it.configureReportConvention(variant.name)
+            it.configureReportConvention("reference", variant.name)
         }.dependsOn(prerequisites)
     }
     tasks.register(TASK_ANALYSE_REFERENCE).dependsOn(subtasks)
-}
-
-private fun ReferenceAnalysisTask.configureReportConvention(variant: String) {
-    reports.all {
-        it.outputLocation.convention(project.layout.projectDirectory.file(project.provider<String> {
-            val base = project.extensions.getByType(ReportingExtension::class.java).baseDir
-            base.file(Build.ARTIFACT, "reference", variant, it.name, "index.${it.name}").absolutePath
-        }))
-    }
 }
 
 /**

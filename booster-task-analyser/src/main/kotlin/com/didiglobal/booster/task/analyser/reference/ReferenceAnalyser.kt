@@ -18,6 +18,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ComponentArtifactIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.internal.concurrent.GradleThread
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.FieldVisitor
@@ -79,7 +80,9 @@ class ReferenceAnalyser(
                 val fv = FieldAnalyser(av, edge)
                 val mv = MethodAnalyser(av, sv, edge)
                 executor.submit {
+                    GradleThread.setManaged()
                     klass.accept(ClassAnalyser(klass, av, fv, mv, sv, edge))
+                    GradleThread.setUnmanaged()
                 }
             }.forEach {
                 it.get()
