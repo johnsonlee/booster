@@ -19,6 +19,11 @@ import java.io.PrintWriter
  * @author johnsonlee
  */
 @Suppress("UnstableApiUsage")
+@Deprecated(
+        message = "Use BaseVariant.getRuntimeConfiguration() instead",
+        replaceWith = ReplaceWith("BaseVariant.getRuntimeConfiguration()"),
+        level = DeprecationLevel.WARNING
+)
 class ResolvedArtifactResults(private val variant: BaseVariant) : Collection<ResolvedArtifactResult> {
 
     private val results = listOf(AAR, JAR)

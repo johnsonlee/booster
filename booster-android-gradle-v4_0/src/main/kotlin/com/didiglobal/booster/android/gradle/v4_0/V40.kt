@@ -23,6 +23,9 @@ import com.didiglobal.booster.gradle.AGPInterface
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.component.ComponentIdentifier
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.tasks.TaskProvider
@@ -231,6 +234,26 @@ internal object V40 : AGPInterface {
 
     override val BaseVariant.isPrecompileDependenciesResourcesEnabled: Boolean
         get() = variantScope.isPrecompileDependenciesResourcesEnabled
+
+    override fun BaseVariant.getDependencies(transitive: Boolean, filter: (ComponentIdentifier) -> Boolean): Collection<ResolvedArtifactResult> {
+        val all = getArtifactCollection(
+                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+                AndroidArtifacts.ArtifactScope.ALL,
+                AndroidArtifacts.ArtifactType.CLASSES_JAR
+        ).filter { result ->
+            filter(result.id.componentIdentifier)
+        }.associateBy {
+            it.id.componentIdentifier
+        }
+        val result = if (!transitive) {
+            runtimeConfiguration.incoming.resolutionResult.allDependencies.filterIsInstance<ResolvedDependencyResult>().associate {
+                it.selected.id to all[it.selected.id]!!
+            }
+        } else {
+            all
+        }
+        return result.values.toSet()
+    }
 
     override val Context.task: TransformTask
         get() = javaClass.getDeclaredField("this$1").apply {
