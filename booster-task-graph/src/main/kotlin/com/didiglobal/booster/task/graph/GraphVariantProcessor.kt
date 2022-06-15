@@ -56,18 +56,22 @@ private fun BaseVariant.generateTaskGraph() {
 }
 
 private fun BaseVariant.generateProjectGraph() {
+    val rootProject = project.rootProject
     val graph = Graph.Builder<ProjectNode>().setTitle(project.toString())
-    val stack = Stack<Project>().apply {
-        add(project)
+    val stack = Stack<ProjectNode>().apply {
+        add(ProjectNode(project.path))
     }
 
     while (stack.isNotEmpty()) {
         val from = stack.pop()
-        val deps = from.dependencies(this).onEach { to ->
+        rootProject.project(from.path).dependencies(this).filter { to ->
+            !graph.hasEdge(from, to)
+        }.onEach { to ->
             stack.push(to)
-            graph.addEdge(ProjectNode(from.path), ProjectNode(to.path))
+            graph.addEdge(from, to)
+        }.takeIf(List<ProjectNode>::isNotEmpty)?.let { deps ->
+            project.logger.info("#### ${from.path} => ${deps.joinToString(", ", "{", "}") { it.path }}")
         }
-        project.logger.info("#### $from => ${deps.joinToString(", ", "{", "}")}")
     }
 
     try {
@@ -78,7 +82,7 @@ private fun BaseVariant.generateProjectGraph() {
     }
 }
 
-private fun Project.dependencies(variant: BaseVariant): Set<Project> = when {
+private fun Project.dependencies(variant: BaseVariant): Set<ProjectNode> = when {
     isAndroid -> {
         when (val android = getAndroid<BaseExtension>()) {
             is AppExtension -> android.applicationVariants
@@ -103,5 +107,5 @@ private fun Project.dependencies(variant: BaseVariant): Set<Project> = when {
     }
     else -> emptyList()
 }.filterIsInstance<ProjectComponentIdentifier>().map {
-    project.rootProject.project(it.projectPath)
+    ProjectNode(it.projectPath)
 }.toSet()
