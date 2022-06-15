@@ -15,7 +15,6 @@ import com.didiglobal.booster.graph.dot.DotGraph
 import com.didiglobal.booster.kotlinx.file
 import com.didiglobal.booster.task.spi.VariantProcessor
 import com.google.auto.service.AutoService
-import io.johnsonlee.once.Once
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.plugins.JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME
@@ -24,26 +23,21 @@ import java.util.Stack
 @AutoService(VariantProcessor::class)
 class GraphVariantProcessor : VariantProcessor {
 
-    private val once = Once<Boolean>()
-
     override fun process(variant: BaseVariant) {
-        once {
-            val project = variant.project
-            project.gradle.taskGraph.whenReady {
-                project.generateTaskGraph()
-                project.generateProjectGraph(variant)
-            }
-            true
+        val project = variant.project
+        project.gradle.taskGraph.whenReady {
+            variant.generateTaskGraph()
+            variant.generateProjectGraph()
         }
     }
 
 }
 
-private fun Project.generateTaskGraph() {
-    val taskNames = gradle.startParameter.taskNames
-    val dot = rootProject.buildDir.file("${taskNames.joinToString("-") { it.replace(":", "") }}.dot")
+private fun BaseVariant.generateTaskGraph() {
+    val taskNames = project.gradle.startParameter.taskNames
+    val dot = project.rootProject.buildDir.file(name, "${taskNames.joinToString("-") { it.replace(":", "") }}.dot")
     val title = "./gradlew ${taskNames.joinToString(" ")}"
-    val graph = gradle.taskGraph.allTasks.map { task ->
+    val graph = project.gradle.taskGraph.allTasks.map { task ->
         task.taskDependencies.getDependencies(task).map { dep ->
             task to dep
         }
@@ -57,30 +51,30 @@ private fun Project.generateTaskGraph() {
     try {
         DotGraph.DIGRAPH.visualize(graph, dot)
     } catch (e: Exception) {
-        logger.error(e.message)
+        project.logger.error(e.message)
     }
 }
 
-private fun Project.generateProjectGraph(variant: BaseVariant) {
-    val self = this
-    val graph = Graph.Builder<ProjectNode>().setTitle(self.toString())
+private fun BaseVariant.generateProjectGraph() {
+    val graph = Graph.Builder<ProjectNode>().setTitle(project.toString())
     val stack = Stack<Project>().apply {
-        add(self)
+        add(project)
     }
 
     while (stack.isNotEmpty()) {
         val from = stack.pop()
-        logger.info("#### ${from}")
-        stack.addAll(from.dependencies(variant).onEach { to ->
+        val deps = from.dependencies(this).onEach { to ->
+            stack.push(to)
             graph.addEdge(ProjectNode(from.path), ProjectNode(to.path))
-        })
+        }
+        project.logger.info("#### $from => ${deps.joinToString(", ", "{", "}")}")
     }
 
     try {
-        val dot = buildDir.file("dependencies.dot")
+        val dot = project.buildDir.file("dependencies.dot")
         DotGraph.DIGRAPH.visualize(graph.build(), dot)
     } catch (e: Throwable) {
-        logger.error(e.message)
+        project.logger.error(e.message)
     }
 }
 
