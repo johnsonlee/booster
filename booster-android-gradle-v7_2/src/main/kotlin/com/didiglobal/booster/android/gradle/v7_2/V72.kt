@@ -10,24 +10,22 @@ import com.android.build.api.transform.QualifiedContent
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.LibraryVariant
-import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.api.artifact.SourceArtifactType
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.scope.BuildArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.VariantType
 import com.android.builder.model.ApiVersion
 import com.android.sdklib.BuildToolInfo
-import com.didiglobal.booster.android.gradle.v7_2.V72.project
 import com.didiglobal.booster.gradle.AGPInterface
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -172,7 +170,7 @@ internal object V72 : AGPInterface {
 
     override fun BaseVariant.getArtifactCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): ArtifactCollection {
         return component.variantDependencies.getArtifactCollection(configType, scope, artifactType)
@@ -180,7 +178,7 @@ internal object V72 : AGPInterface {
 
     override fun BaseVariant.getArtifactFileCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): FileCollection {
         return component.variantDependencies.getArtifactFileCollection(configType, scope, artifactType)

@@ -11,6 +11,7 @@ import com.android.build.gradle.internal.api.artifact.SourceArtifactType
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.scope.AnchorOutputType
 import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -110,7 +111,7 @@ internal object V34 : AGPInterface {
 
     override fun BaseVariant.getArtifactCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): ArtifactCollection {
         return variantScope.getArtifactCollection(configType, scope, artifactType)
@@ -118,7 +119,7 @@ internal object V34 : AGPInterface {
 
     override fun BaseVariant.getArtifactFileCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): FileCollection {
         return variantScope.getArtifactFileCollection(configType, scope, artifactType)
@@ -143,6 +144,7 @@ internal object V34 : AGPInterface {
                     if (other !is ApiVersion) return false
                     return apiLevel == other.apiLevel || codename.equals(other.codename, false)
                 }
+
                 override fun hashCode(): Int = codename?.hashCode() ?: apiLevel
             }
         }

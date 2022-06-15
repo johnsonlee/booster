@@ -13,6 +13,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
 import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.TaskProvider
@@ -48,6 +49,11 @@ val BaseVariant.platform: File
 /**
  * The variant dependencies
  */
+@Deprecated(
+        message = "Use BaseVariant.getRuntimeConfiguration() instead",
+        replaceWith = ReplaceWith("BaseVariant.getRuntimeConfiguration()"),
+        level = DeprecationLevel.WARNING
+)
 val BaseVariant.dependencies: Collection<ResolvedArtifactResult>
     get() = ResolvedArtifactResults(this)
 
@@ -337,3 +343,7 @@ val BaseVariant.packageBundleTask: Task?
 )
 val BaseVariant.mergeJavaResourceTask: Task?
     get() = project.tasks.findByName(getTaskName("merge", "JavaResource"))
+
+fun BaseVariant.getRuntimeClasspath(transitive: Boolean = true): Set<ResolvedArtifact> {
+    return project.getRuntimeClasspath(transitive, this)
+}

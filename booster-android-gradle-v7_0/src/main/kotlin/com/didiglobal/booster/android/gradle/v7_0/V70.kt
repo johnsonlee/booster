@@ -15,6 +15,7 @@ import com.android.build.gradle.internal.api.artifact.SourceArtifactType
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.scope.AnchorOutputType
 import com.android.build.gradle.internal.scope.BuildArtifactType
 import com.android.build.gradle.internal.scope.GlobalScope
@@ -163,7 +164,7 @@ internal object V70 : AGPInterface {
 
     override fun BaseVariant.getArtifactCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): ArtifactCollection {
         return component.variantDependencies.getArtifactCollection(configType, scope, artifactType)
@@ -171,7 +172,7 @@ internal object V70 : AGPInterface {
 
     override fun BaseVariant.getArtifactFileCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): FileCollection {
         return component.variantDependencies.getArtifactFileCollection(configType, scope, artifactType)
