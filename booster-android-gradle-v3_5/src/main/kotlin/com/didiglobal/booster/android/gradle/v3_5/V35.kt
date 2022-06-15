@@ -11,6 +11,7 @@ import com.android.build.gradle.internal.api.artifact.SourceArtifactType
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.scope.AnchorOutputType
 import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -25,6 +26,7 @@ import com.didiglobal.booster.gradle.AGPInterface
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.TaskProvider
 import java.io.File
@@ -48,6 +50,17 @@ internal object V35 : AGPInterface {
             project.logger.warn(e.message, e)
             project.objects.fileCollection().builtBy(variantScope.artifacts.getFinalArtifactFiles(type))
         }
+    }
+
+    private fun BaseVariant.getResolvedArtifactResults(scope: AndroidArtifacts.ArtifactScope): Collection<ResolvedArtifactResult> {
+        return listOf(AndroidArtifacts.ArtifactType.AAR, AndroidArtifacts.ArtifactType.JAR)
+                .asSequence()
+                .map { getArtifactCollection(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH, scope, it) }
+                .map { it.artifacts }
+                .flatten()
+                .distinctBy { it.id.componentIdentifier.displayName }
+                .sortedBy { it.id.componentIdentifier.displayName }
+                .toList()
     }
 
     override val scopeFullWithFeatures: MutableSet<in QualifiedContent.Scope>
@@ -204,6 +217,10 @@ internal object V35 : AGPInterface {
 
     override val Context.task: TransformTask
         get() = this as TransformTask
+
+    override fun BaseVariant.getResolvedArtifactResults(transitive: Boolean): Collection<ResolvedArtifactResult> {
+        return getResolvedArtifactResults(if (transitive) ArtifactScope.ALL else ArtifactScope.PROJECT)
+    }
 
     override val Project.aapt2Enabled: Boolean
         get() = true

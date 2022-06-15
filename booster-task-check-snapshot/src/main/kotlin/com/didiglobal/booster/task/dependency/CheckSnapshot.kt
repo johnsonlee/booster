@@ -1,7 +1,7 @@
 package com.didiglobal.booster.task.dependency
 
 import com.android.build.gradle.api.BaseVariant
-import com.didiglobal.booster.gradle.dependencies
+import com.didiglobal.booster.gradle.getResolvedArtifactResults
 import com.didiglobal.booster.kotlinx.CSI_RESET
 import com.didiglobal.booster.kotlinx.CSI_YELLOW
 import com.didiglobal.booster.kotlinx.ifNotEmpty
@@ -18,7 +18,7 @@ internal open class CheckSnapshot : DefaultTask() {
     @TaskAction
     fun run() {
         if (!variant.buildType.isDebuggable) {
-            variant.dependencies.filter {
+            variant.getResolvedArtifactResults(true).filter {
                 it.id.componentIdentifier is MavenUniqueSnapshotComponentIdentifier
             }.map {
                 it.id.componentIdentifier as MavenUniqueSnapshotComponentIdentifier

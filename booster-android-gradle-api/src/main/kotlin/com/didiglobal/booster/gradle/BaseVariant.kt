@@ -48,6 +48,11 @@ val BaseVariant.platform: File
 /**
  * The variant dependencies
  */
+@Deprecated(
+        message = "Use BaseVariant.getResolvedArtifactResults(Boolean) instead",
+        replaceWith = ReplaceWith("BaseVariant.getResolvedArtifactResults(Boolean)", "com.didiglobal.booster.gradle"),
+        level = DeprecationLevel.WARNING
+)
 val BaseVariant.dependencies: Collection<ResolvedArtifactResult>
     get() = ResolvedArtifactResults(this)
 
@@ -337,3 +342,7 @@ val BaseVariant.packageBundleTask: Task?
 )
 val BaseVariant.mergeJavaResourceTask: Task?
     get() = project.tasks.findByName(getTaskName("merge", "JavaResource"))
+
+fun BaseVariant.getResolvedArtifactResults(transitive: Boolean = true): Collection<ResolvedArtifactResult> = AGP.run {
+    getResolvedArtifactResults(transitive)
+}
