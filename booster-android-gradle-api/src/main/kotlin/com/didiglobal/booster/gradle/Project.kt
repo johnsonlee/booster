@@ -2,6 +2,10 @@ package com.didiglobal.booster.gradle
 
 import com.android.repository.Revision
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ResolvedArtifact
+import org.gradle.api.artifacts.component.ComponentIdentifier
+import org.gradle.api.component.Artifact
+import org.gradle.api.plugins.JavaPlugin
 
 /**
  * The gradle version
