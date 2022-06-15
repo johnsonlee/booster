@@ -63,7 +63,6 @@ private fun Project.generateTaskGraph() {
 
 private fun Project.generateProjectGraph(variant: BaseVariant) {
     val self = this
-    val projects = mutableSetOf(self.path)
     val graph = Graph.Builder<ProjectNode>().setTitle(self.toString())
     val stack = Stack<Project>().apply {
         add(self)
@@ -72,9 +71,7 @@ private fun Project.generateProjectGraph(variant: BaseVariant) {
     while (stack.isNotEmpty()) {
         val from = stack.pop()
         logger.info("#### ${from}")
-        stack.addAll(from.dependencies(variant).filter {
-            projects.add(it.path)
-        }.onEach { to ->
+        stack.addAll(from.dependencies(variant).onEach { to ->
             graph.addEdge(ProjectNode(from.path), ProjectNode(to.path))
         })
     }
