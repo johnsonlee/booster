@@ -19,6 +19,11 @@ import java.io.PrintWriter
  * @author johnsonlee
  */
 @Suppress("UnstableApiUsage")
+@Deprecated(
+        message = "Use BaseVariant.dependencies(Boolean) instead",
+        replaceWith = ReplaceWith("BaseVariant.dependencies(Boolean)"),
+        level = DeprecationLevel.WARNING
+)
 class ResolvedArtifactResults(private val variant: BaseVariant) : Collection<ResolvedArtifactResult> {
 
     private val results = listOf(AAR, JAR)

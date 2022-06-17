@@ -11,6 +11,7 @@ import com.android.build.gradle.internal.api.artifact.SourceArtifactType
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.scope.AnchorOutputType
 import com.android.build.gradle.internal.scope.GlobalScope
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -25,6 +26,7 @@ import com.didiglobal.booster.gradle.AGPInterface
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.TaskProvider
 import java.io.File
@@ -48,6 +50,17 @@ internal object V34 : AGPInterface {
             project.logger.warn(e.message, e)
             project.files()
         }
+    }
+
+    private fun BaseVariant.getResolvedArtifactResults(scope: ArtifactScope): Collection<ResolvedArtifactResult> {
+        return listOf(AndroidArtifacts.ArtifactType.AAR, AndroidArtifacts.ArtifactType.JAR)
+                .asSequence()
+                .map { getArtifactCollection(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH, scope, it) }
+                .map { it.artifacts }
+                .flatten()
+                .distinctBy { it.id.componentIdentifier.displayName }
+                .sortedBy { it.id.componentIdentifier.displayName }
+                .toList()
     }
 
     override val scopeFullWithFeatures: MutableSet<in QualifiedContent.Scope>
@@ -110,7 +123,7 @@ internal object V34 : AGPInterface {
 
     override fun BaseVariant.getArtifactCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): ArtifactCollection {
         return variantScope.getArtifactCollection(configType, scope, artifactType)
@@ -118,7 +131,7 @@ internal object V34 : AGPInterface {
 
     override fun BaseVariant.getArtifactFileCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): FileCollection {
         return variantScope.getArtifactFileCollection(configType, scope, artifactType)
@@ -143,6 +156,7 @@ internal object V34 : AGPInterface {
                     if (other !is ApiVersion) return false
                     return apiLevel == other.apiLevel || codename.equals(other.codename, false)
                 }
+
                 override fun hashCode(): Int = codename?.hashCode() ?: apiLevel
             }
         }
@@ -199,6 +213,10 @@ internal object V34 : AGPInterface {
 
     override val BaseVariant.isPrecompileDependenciesResourcesEnabled: Boolean
         get() = false
+
+    override fun BaseVariant.getResolvedArtifactResults(transitive: Boolean): Collection<ResolvedArtifactResult> {
+        return getResolvedArtifactResults(if (transitive) ArtifactScope.ALL else ArtifactScope.MODULE)
+    }
 
     override val Context.task: TransformTask
         get() = this as TransformTask

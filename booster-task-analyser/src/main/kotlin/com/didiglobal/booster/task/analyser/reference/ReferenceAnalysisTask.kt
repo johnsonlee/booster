@@ -1,5 +1,6 @@
 package com.didiglobal.booster.task.analyser.reference
 
+import com.android.build.gradle.api.BaseVariant
 import com.didiglobal.booster.graph.Graph
 import com.didiglobal.booster.graph.dot.DotGraph
 import com.didiglobal.booster.graph.json.JsonGraphRender
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit
 open class ReferenceAnalysisTask : DefaultTask(), Reporting<ReferenceReports> {
 
     @get:Internal
-    lateinit var variant: String
+    var variant: BaseVariant? = null
 
     @get:Internal
     val _reports: ReferenceReports by lazy {

@@ -10,28 +10,27 @@ import com.android.build.api.transform.QualifiedContent
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.LibraryVariant
-import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.api.artifact.SourceArtifactType
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.scope.BuildArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.VariantType
 import com.android.builder.model.ApiVersion
 import com.android.sdklib.BuildToolInfo
-import com.didiglobal.booster.android.gradle.v7_2.V72.project
 import com.didiglobal.booster.gradle.AGPInterface
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.tasks.TaskProvider
@@ -103,6 +102,17 @@ internal object V72 : AGPInterface {
     private val BaseVariant.artifacts: ArtifactsImpl
         get() = component.artifacts
 
+    private fun BaseVariant.getResolvedArtifactResults(scope: ArtifactScope): Collection<ResolvedArtifactResult> {
+        return listOf(AndroidArtifacts.ArtifactType.AAR, AndroidArtifacts.ArtifactType.JAR)
+                .asSequence()
+                .map { getArtifactCollection(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH, scope, it) }
+                .map { it.artifacts }
+                .flatten()
+                .distinctBy { it.id.componentIdentifier.displayName }
+                .sortedBy { it.id.componentIdentifier.displayName }
+                .toList()
+    }
+
     override val scopeFullWithFeatures: MutableSet<in QualifiedContent.Scope>
         get() = TransformManager.SCOPE_FULL_WITH_FEATURES
 
@@ -172,7 +182,7 @@ internal object V72 : AGPInterface {
 
     override fun BaseVariant.getArtifactCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): ArtifactCollection {
         return component.variantDependencies.getArtifactCollection(configType, scope, artifactType)
@@ -180,7 +190,7 @@ internal object V72 : AGPInterface {
 
     override fun BaseVariant.getArtifactFileCollection(
             configType: AndroidArtifacts.ConsumedConfigType,
-            scope: AndroidArtifacts.ArtifactScope,
+            scope: ArtifactScope,
             artifactType: AndroidArtifacts.ArtifactType
     ): FileCollection {
         return component.variantDependencies.getArtifactFileCollection(configType, scope, artifactType)
@@ -261,6 +271,10 @@ internal object V72 : AGPInterface {
 
     override val BaseVariant.isPrecompileDependenciesResourcesEnabled: Boolean
         get() = component.isPrecompileDependenciesResourcesEnabled
+
+    override fun BaseVariant.getResolvedArtifactResults(transitive: Boolean): Collection<ResolvedArtifactResult> {
+        return getResolvedArtifactResults(if (transitive) ArtifactScope.ALL else ArtifactScope.PROJECT)
+    }
 
     override val Context.task: TransformTask
         get() = javaClass.getDeclaredField("this$1").apply {
