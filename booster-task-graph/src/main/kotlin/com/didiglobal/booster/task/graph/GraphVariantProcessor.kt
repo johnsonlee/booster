@@ -1,13 +1,7 @@
 package com.didiglobal.booster.task.graph
 
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
-import com.didiglobal.booster.gradle.dependencies
-import com.didiglobal.booster.gradle.getAndroid
-import com.didiglobal.booster.gradle.isAndroid
-import com.didiglobal.booster.gradle.isJavaLibrary
+import com.didiglobal.booster.gradle.getResolvedArtifactResults
 import com.didiglobal.booster.gradle.project
 import com.didiglobal.booster.graph.Edge
 import com.didiglobal.booster.graph.Graph
@@ -17,7 +11,6 @@ import com.didiglobal.booster.task.spi.VariantProcessor
 import com.google.auto.service.AutoService
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-import org.gradle.api.plugins.JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME
 import java.util.Stack
 
 @AutoService(VariantProcessor::class)
@@ -64,7 +57,7 @@ private fun BaseVariant.generateProjectGraph() {
 
     while (stack.isNotEmpty()) {
         val from = stack.pop()
-        rootProject.project(from.path).dependencies(this).filter { to ->
+        rootProject.project(from.path).getNoneTransitiveUpstreamProjects(this).filter { to ->
             !graph.hasEdge(from, to)
         }.takeIf(List<ProjectNode>::isNotEmpty)?.forEach { to ->
             stack.push(to)
@@ -74,36 +67,16 @@ private fun BaseVariant.generateProjectGraph() {
 
     try {
         val dot = project.buildDir.file(name, "dependencies.dot")
-        DotGraph.DIGRAPH.visualize(graph.build(), dot)
+        DotGraph.DIGRAPH.visualize(graph.build(), dot, DotGraph.DotOptions(format = "svg", rankdir = "LR"))
     } catch (e: Throwable) {
         project.logger.error(e.message)
     }
 }
 
-private fun Project.dependencies(variant: BaseVariant): Set<ProjectNode> = when {
-    isAndroid -> {
-        when (val android = getAndroid<BaseExtension>()) {
-            is AppExtension -> android.applicationVariants
-            is LibraryExtension -> android.libraryVariants
-            else -> emptyList<BaseVariant>()
-        }.let { variants ->
-            variants.filter {
-                it.name == variant.name
-            }.takeIf {
-                it.isNotEmpty()
-            } ?: variants.filter {
-                it.buildType.name == variant.buildType.name
-            }
-        }.map(BaseVariant::dependencies).flatten().map {
-            it.id.componentIdentifier
-        }
-    }
-    isJavaLibrary -> {
-        configurations.getByName(RUNTIME_CLASSPATH_CONFIGURATION_NAME).resolvedConfiguration.resolvedArtifacts.map {
-            it.id.componentIdentifier
-        }
-    }
-    else -> emptyList()
-}.filterIsInstance<ProjectComponentIdentifier>().map {
-    ProjectNode(it.projectPath)
-}.toSet()
+private fun Project.getNoneTransitiveUpstreamProjects(variant: BaseVariant): Set<ProjectNode> {
+    return getResolvedArtifactResults(false, variant).map {
+        it.id.componentIdentifier
+    }.filterIsInstance<ProjectComponentIdentifier>().map {
+        ProjectNode(it.projectPath)
+    }.toSet()
+}
