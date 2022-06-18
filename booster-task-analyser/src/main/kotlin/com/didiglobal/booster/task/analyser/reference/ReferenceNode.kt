@@ -9,6 +9,18 @@ data class ReferenceNode(
         val variant: BaseVariant? = null
 ) : GroupedNode<String> {
 
+    companion object {
+        val COMPONENT_COMPARATOR = Comparator<String> { a, b ->
+            val ap = a.startsWith("project ")
+            val bp = b.startsWith("project ")
+            when {
+                (ap && bp) || (!ap && !bp) -> a.compareTo(b)
+                ap -> 1
+                else -> -1
+            }
+        }
+    }
+
     private val group: String by lazy {
         if (variant == null) component else "${component}:${variant.name}"
     }
