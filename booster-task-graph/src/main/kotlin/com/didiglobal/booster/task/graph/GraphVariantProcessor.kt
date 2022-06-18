@@ -66,11 +66,15 @@ private fun BaseVariant.generateProjectGraph() {
     val stack = Stack<ProjectNode>().apply {
         add(ProjectNode(project.path))
     }
+    val regex = Regex("app|business|domain|common")
 
     while (stack.isNotEmpty()) {
         val from = stack.pop()
+        if (!from.path.contains(regex)) continue
         rootProject.project(from.path).getUpstreamProjects(false, this).map {
             ProjectNode(it.path)
+        }.filter { to ->
+            to.path.contains(regex)
         }.filter { to ->
             !graph.hasEdge(from, to)
         }.takeIf(List<ProjectNode>::isNotEmpty)?.forEach { to ->
