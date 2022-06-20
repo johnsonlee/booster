@@ -1,6 +1,7 @@
 package com.didiglobal.booster.cha
 
 import com.didiglobal.booster.kotlinx.green
+import io.johnsonlee.once.Once
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
@@ -13,6 +14,8 @@ internal class ArchivedClassSet<ClassFile, ClassParser : ClassFileParser<ClassFi
         val location: File,
         override val parser: ClassParser
 ) : AbstractClassSet<ClassFile, ClassParser>() {
+
+    private val once = Once<ArchivedClassSet<ClassFile, ClassParser>>()
 
     private val classes: Map<String, ClassFile> by lazy {
         ZipInputStream(FileInputStream(location)).use { zip ->
@@ -46,9 +49,9 @@ internal class ArchivedClassSet<ClassFile, ClassParser : ClassFileParser<ClassFi
 
     override fun isEmpty() = this.size <= 0
 
-    override fun load(): ArchivedClassSet<ClassFile, ClassParser> {
+    override fun load(): ArchivedClassSet<ClassFile, ClassParser> = once {
         println("Load ${green(this.classes.size)} classes from $location")
-        return this
+        this
     }
 
     override fun iterator(): Iterator<ClassFile> = this.classes.values.iterator()
