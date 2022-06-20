@@ -3,6 +3,7 @@ package com.didiglobal.booster.cha
 import com.didiglobal.booster.kotlinx.NCPU
 import com.didiglobal.booster.kotlinx.parallelStream
 import com.didiglobal.booster.kotlinx.stream
+import io.johnsonlee.once.Once
 import java.util.Stack
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -16,6 +17,8 @@ internal class CompositeClassSet<ClassFile, ClassParser : ClassFileParser<ClassF
 ) : AbstractClassSet<ClassFile, ClassParser>() {
 
     private val cache = ConcurrentHashMap<String, ClassFile>()
+
+    private val once = Once<CompositeClassSet<ClassFile, ClassParser>>()
 
     override val parser: ClassParser = classSets.first().parser
 
@@ -37,7 +40,7 @@ internal class CompositeClassSet<ClassFile, ClassParser : ClassFileParser<ClassF
 
     override fun isEmpty() = this.size <= 0
 
-    override fun load(): CompositeClassSet<ClassFile, ClassParser> {
+    override fun load(): CompositeClassSet<ClassFile, ClassParser> = once {
         val count: (ClassSet<ClassFile, ClassParser>) -> Int = {
             var n = 1
             val stack = Stack<ClassSet<ClassFile, ClassParser>>()
@@ -71,13 +74,13 @@ internal class CompositeClassSet<ClassFile, ClassParser : ClassFileParser<ClassF
             executor.awaitTermination(1L, TimeUnit.HOURS)
         }
 
-        return this
+        this
     }
 
     override fun iterator(): Iterator<ClassFile> = when (this.cache.size) {
         this.size -> this.cache.values.iterator()
         else -> object : Iterator<ClassFile> {
-            val delegate = classSets.stream().flatMap(ClassSet<ClassFile, ClassParser>::stream).iterator()
+            val delegate = classSets.asSequence().flatMap(ClassSet<ClassFile, ClassParser>::asSequence).iterator()
 
             override fun hasNext() = delegate.hasNext()
 

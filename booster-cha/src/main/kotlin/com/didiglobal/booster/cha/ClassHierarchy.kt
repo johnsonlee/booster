@@ -1,31 +1,26 @@
 package com.didiglobal.booster.cha
 
-import java.util.Collections
 import java.util.Objects
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * @author johnsonlee
  */
 @Suppress("MemberVisibilityCanBePrivate")
 class ClassHierarchy<ClassFile, ClassParser : ClassFileParser<ClassFile>>(
-        private val classSet: ClassSet<ClassFile, ClassParser>
+        private val classSet: ClassSet<ClassFile, ClassParser>,
+        private val onClassResolveFailed: OnClassResolveFailed? = null
 ) : ClassFileParser<ClassFile> by classSet.parser {
 
-    private val unresolved = ConcurrentHashMap.newKeySet<String>()
-
-    val unresolvedClasses: Set<String>
-        get() = Collections.unmodifiableSet(unresolved)
+    val classes: Iterable<ClassFile> = classSet
 
     operator fun get(name: String?): ClassFile? {
-        val clazz = name?.let { classSet[it] }
+        val qn = name ?: return null
+        val clazz = classSet[qn]
         if (null == clazz) {
-            unresolved += name
+            onClassResolveFailed?.invoke(qn)
         }
         return clazz
     }
-
-    val classes: Iterable<ClassFile> = classSet
 
     fun isInheritFrom(child: ClassFile, parent: ClassFile) = when {
         getClassName(child) == getClassName(parent) -> true
@@ -63,43 +58,43 @@ class ClassHierarchy<ClassFile, ClassParser : ClassFileParser<ClassFile>>(
     }
 
     fun isInheritFromClass(child: ClassFile, parent: ClassFile): Boolean {
-        if (Objects.equals(getSuperName(child), getClassName(parent))) {
+        val childSuperName = getSuperName(child)
+        val parentName = getClassName(parent)
+        if (Objects.equals(childSuperName, parentName)) {
             return true
         }
 
-        if (null == getSuperName(child)
-                || Objects.equals(getSuperName(child), getSuperName(parent))
+        if (null == childSuperName
+                || Objects.equals(childSuperName, getSuperName(parent))
                 || Objects.equals(getSuperName(parent), getClassName(child))) {
             return false
         }
 
-        return this[getSuperName(child)]?.let {
+        return this[childSuperName]?.let {
             isInheritFromClass(it, parent)
         } ?: false
     }
 
     fun getSuperClasses(clazz: ClassFile): Set<ClassFile> {
-        if (getSuperName(clazz) == null) {
-            return emptySet()
-        }
+        val superName = getSuperName(clazz) ?: return emptySet()
+        var parent = this[superName]
 
-        if (getSuperName(clazz) == JAVA_LANG_OBJECT) {
-            return setOf(this[getSuperName(clazz)]!!)
+        if (superName == JAVA_LANG_OBJECT) {
+            return parent?.let(::setOf) ?: throw ClassNotFoundException(superName)
         }
 
         val classes = mutableSetOf<ClassFile>()
-        var parent = this[getSuperName(clazz)]
 
         while (null != parent) {
             classes += parent
-            parent = getSuperName(parent)?.let {
-                this[it]
-            }
+            parent = getSuperName(parent)?.let(this::get)
         }
 
         return classes
     }
 
 }
+
+typealias OnClassResolveFailed = (String) -> Unit
 
 const val JAVA_LANG_OBJECT = "java/lang/Object"
