@@ -343,3 +343,6 @@ val BaseVariant.packageBundleTask: Task?
 )
 val BaseVariant.mergeJavaResourceTask: Task?
     get() = project.tasks.findByName(getTaskName("merge", "JavaResource"))
+
+val BaseVariant.jars: Set<File>
+    get() = project.getJars(this)

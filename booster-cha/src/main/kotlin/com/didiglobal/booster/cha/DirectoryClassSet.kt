@@ -2,6 +2,7 @@ package com.didiglobal.booster.cha
 
 import com.didiglobal.booster.kotlinx.green
 import com.didiglobal.booster.kotlinx.search
+import io.johnsonlee.once.Once
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.stream.Collectors.toMap
@@ -15,6 +16,8 @@ internal class DirectoryClassSet<ClassFile, ClassParser : ClassFileParser<ClassF
         val location: File,
         override val parser: ClassParser
 ) : AbstractClassSet<ClassFile, ClassParser>() {
+
+    private val once = Once<DirectoryClassSet<ClassFile, ClassParser>>()
 
     private val classes: Map<String, ClassFile> by lazy {
         location.search(CLASS_FILE_FILTER).parallelStream()
@@ -35,9 +38,9 @@ internal class DirectoryClassSet<ClassFile, ClassParser : ClassFileParser<ClassF
 
     override fun isEmpty() = this.size <= 0
 
-    override fun load(): DirectoryClassSet<ClassFile, ClassParser> {
+    override fun load(): DirectoryClassSet<ClassFile, ClassParser> = once {
         println("Load ${green(this.classes.size)} classes from $location")
-        return this
+        this
     }
 
     override fun iterator(): Iterator<ClassFile> = this.classes.values.iterator()
