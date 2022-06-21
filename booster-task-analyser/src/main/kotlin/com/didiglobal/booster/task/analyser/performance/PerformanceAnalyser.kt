@@ -4,6 +4,7 @@ import com.didiglobal.booster.aapt2.metadata
 import com.didiglobal.booster.cha.ClassHierarchy
 import com.didiglobal.booster.cha.ClassSet
 import com.didiglobal.booster.cha.JAVA_LANG_OBJECT
+import com.didiglobal.booster.cha.asm.AsmClassFileParser
 import com.didiglobal.booster.cha.fold
 import com.didiglobal.booster.cha.graph.CallNode
 import com.didiglobal.booster.cha.graph.ROOT
@@ -18,7 +19,6 @@ import com.didiglobal.booster.kotlinx.search
 import com.didiglobal.booster.kotlinx.separatorsToSystem
 import com.didiglobal.booster.kotlinx.yellow
 import com.didiglobal.booster.task.analyser.Build
-import com.didiglobal.booster.task.analyser.AsmClassFileParser
 import com.didiglobal.booster.transform.ArtifactManager
 import com.didiglobal.booster.transform.asm.args
 import com.didiglobal.booster.transform.asm.className
