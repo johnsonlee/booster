@@ -106,7 +106,7 @@ class ReferenceAnalyser(private val asm: Int = Opcodes.ASM7) {
      * Analyse the specific [klass] to find out the referenced classes
      */
     fun analyse(klass: ClassNode): Set<Type> {
-        val types = sortedSetOf<Type>()
+        val types = mutableSetOf<Type>()
         val av = AnnotationAnalyser(types)
         val sv = SignatureAnalyser(types)
         val fv = FieldAnalyser(av, types)
