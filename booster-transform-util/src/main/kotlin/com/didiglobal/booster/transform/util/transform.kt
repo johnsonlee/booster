@@ -64,7 +64,9 @@ fun ZipFile.transform(
         runnable.run()
     }))
 
-    entries().asSequence().forEach { entry ->
+    entries().asSequence().filterNot {
+        it.name.startsWith("META-INF/") && (it.name.endsWith(".SF", true) || it.name.endsWith(".RSA", true))
+    }.forEach { entry ->
         if (!entries.contains(entry.name)) {
             val zae = entryFactory(entry)
             val stream = InputStreamSupplier {
