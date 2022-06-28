@@ -9,21 +9,22 @@ import java.util.Stack
  * @author johnsonlee
  */
 @Suppress("MemberVisibilityCanBePrivate")
-class ClassHierarchy<ClassFile : Any, ClassParser : ClassFileParser<ClassFile>>(
+class ClassHierarchy<ClassFile : Any, ClassParser>(
         private val classSet: ClassSet<ClassFile, ClassParser>,
         private val onClassResolveFailed: OnClassResolveFailed? = null
-) : ClassFileParser<ClassFile> by classSet.parser {
+) : ClassFileParser<ClassFile> by classSet
+        where ClassParser : ClassFileParser<ClassFile> {
 
     /**
      * A graph that each edge is from parent type to children types
      */
     private val graph: Graph<ClassNode> by lazy {
-        classSet.fold(Graph.Builder<ClassNode>()) { builder, clazz ->
-            val className = classSet.parser.getClassName(clazz)
-            classSet.parser.getSuperName(clazz)?.let { superName ->
+        classSet.load().fold(Graph.Builder<ClassNode>()) { builder, clazz ->
+            val className = getClassName(clazz)
+            getSuperName(clazz)?.let { superName ->
                 builder.addEdge(ClassNode(superName), ClassNode(className))
             }
-            classSet.parser.getInterfaces(clazz).forEach { interfaceName ->
+            getInterfaces(clazz).forEach { interfaceName ->
                 builder.addEdge(ClassNode(interfaceName), ClassNode(className))
             }
             builder
@@ -46,7 +47,6 @@ class ClassHierarchy<ClassFile : Any, ClassParser : ClassFileParser<ClassFile>>(
             filter: ClassFileParser<ClassFile>.(clazz: ClassFile) -> Boolean = { true }
     ): Set<ClassFile> {
         val fq = name ?: return emptySet()
-        val parser = classSet.parser
         val stack = Stack<String>().apply {
             push(fq)
         }
@@ -56,9 +56,9 @@ class ClassHierarchy<ClassFile : Any, ClassParser : ClassFileParser<ClassFile>>(
             children += graph[ClassNode(stack.pop())].takeIf(Set<ClassNode>::isNotEmpty)?.mapNotNull {
                 get(it.name)
             }?.filter {
-                filter(parser, it)
+                filter(this, it)
             }?.onEach {
-                stack.push(parser.getClassName(it))
+                stack.push(getClassName(it))
             } ?: emptyList()
         }
         return children

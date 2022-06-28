@@ -6,6 +6,7 @@ import com.didiglobal.booster.cha.asm.AsmClassSet
 import com.didiglobal.booster.cha.asm.Reference
 import com.didiglobal.booster.cha.asm.ReferenceAnalyser
 import com.didiglobal.booster.cha.asm.from
+import com.didiglobal.booster.cha.fold
 import com.didiglobal.booster.gradle.getJars
 import com.didiglobal.booster.gradle.getResolvedArtifactResults
 import com.didiglobal.booster.graph.Graph
@@ -71,9 +72,9 @@ open class ReferenceAnalysisTask : DefaultTask(), Reporting<ReferenceReports> {
             }
         }
 
-        val origin = project.name to ClassSet.of(project.getJars(variant).map {
+        val origin = project.name to project.getJars(variant).map {
             ClassSet.from(it)
-        })
+        }.fold()
         val graph = ReferenceAnalyser().analyse(origin, upstream) { klass, progress, duration ->
             project.logger.info("${green(String.format("%3d%%", progress * 100))} Analyse class ${klass.name} in ${yellow(duration.toMillis())} ms")
         }
@@ -133,7 +134,7 @@ open class ReferenceAnalysisTask : DefaultTask(), Reporting<ReferenceReports> {
 }
 
 private fun Project.getClassSet(variant: BaseVariant?): AsmClassSet {
-    return ClassSet.of(project.getJars(variant).map {
+    return project.getJars(variant).map {
         ClassSet.from(it)
-    })
+    }.fold()
 }
