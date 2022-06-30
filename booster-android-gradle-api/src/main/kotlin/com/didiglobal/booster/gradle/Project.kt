@@ -98,25 +98,25 @@ fun Project.getResolvedArtifactResults(
 
 private fun Project.getResolvedArtifactResultsRecursively(transitive: Boolean, resolve: Project.() -> List<ResolvedArtifactResult>): Set<ResolvedArtifactResult> {
     val stack = Stack<Project>()
-    val results = mutableSetOf<ResolvedArtifactResult>()
+    val results = mutableMapOf<ComponentIdentifier, ResolvedArtifactResult>()
 
     stack.add(this)
 
     while (stack.isNotEmpty()) {
-        val resolved = stack.pop().resolve()
-
-        results += resolved
+        val resolved = stack.pop().resolve().filterNot {
+            results.containsKey(it.id.componentIdentifier)
+        }.onEach {
+            results[it.id.componentIdentifier] = it
+        }
 
         if (!transitive) continue
 
-        resolved.map {
-            it.id.componentIdentifier
-        }.filterIsInstance<ProjectComponentIdentifier>().map {
+        resolved.filterIsInstance<ProjectComponentIdentifier>().map {
             rootProject.project(it.projectPath)
         }.let(stack::addAll)
     }
 
-    return results
+    return results.values.toSet()
 }
 
 /**
