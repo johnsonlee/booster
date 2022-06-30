@@ -16,15 +16,14 @@ import com.didiglobal.booster.kotlinx.NCPU
 import com.didiglobal.booster.kotlinx.green
 import com.didiglobal.booster.kotlinx.touch
 import com.didiglobal.booster.kotlinx.yellow
+import com.didiglobal.booster.task.analyser.AnalysisTask
 import com.didiglobal.booster.task.analyser.reference.reporting.ReferencePageRenderer
 import com.didiglobal.booster.task.analyser.reference.reporting.ReferenceReports
 import com.didiglobal.booster.task.analyser.reference.reporting.ReferenceReportsImpl
 import groovy.lang.Closure
 import org.gradle.api.Action
-import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-import org.gradle.api.reporting.Reporting
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.TaskAction
@@ -38,10 +37,9 @@ import java.util.concurrent.TimeUnit
  *
  * @author johnsonlee
  */
-open class ReferenceAnalysisTask : DefaultTask(), Reporting<ReferenceReports> {
+open class ReferenceAnalysisTask : AnalysisTask<ReferenceReports>() {
 
-    @get:Internal
-    var variant: BaseVariant? = null
+    override fun getDescription(): String = "Analysing class reference for Android/Java projects"
 
     @get:Internal
     val _reports: ReferenceReports by lazy {
@@ -49,7 +47,7 @@ open class ReferenceAnalysisTask : DefaultTask(), Reporting<ReferenceReports> {
     }
 
     @TaskAction
-    fun analyse() {
+    override fun analyse() {
         if ((!reports.html.isEnabled) && (!reports.dot.isEnabled) && (!reports.json.isEnabled)) {
             logger.warn("""
                 Please enable reference analysis reports with following configuration:

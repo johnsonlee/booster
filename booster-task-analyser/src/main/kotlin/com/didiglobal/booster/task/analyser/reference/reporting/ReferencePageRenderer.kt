@@ -35,12 +35,19 @@ class ReferencePageRenderer(
                 model.groupBy {
                     it.to.groupBy()
                 }.toSortedMap(Reference.COMPONENT_COMPARATOR).map { (group, edges) ->
-                    group to edges.mapTo(sortedSetOf(compareBy(Reference::klass)), Edge<Reference>::to)
-                }.forEach { (title, items) ->
+                    group to edges.groupBy({ it.to.klass }) { it.from.klass }
+                }.forEach { (title, references) ->
                     startElement("h2").characters(title).endElement()
-                    startElement("ul")
-                    items.forEach { item ->
-                        startElement("li").characters(item.klass).endElement()
+                    startElement("ul").attribute("class", "refs")
+                    references.forEach { (ref, sources) ->
+                        startElement("li")
+                        startElement("div").characters(ref).endElement()
+                        startElement("ul")
+                        sources.forEach {
+                            startElement("li").characters(it).endElement()
+                        }
+                        endElement()
+                        endElement()
                     }
                     endElement()
                 }

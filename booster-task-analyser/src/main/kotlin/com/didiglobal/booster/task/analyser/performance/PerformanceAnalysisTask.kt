@@ -1,43 +1,33 @@
 package com.didiglobal.booster.task.analyser.performance
 
-import com.android.build.gradle.api.BaseVariant
 import com.didiglobal.booster.gradle.extension
+import com.didiglobal.booster.gradle.getJars
+import com.didiglobal.booster.gradle.getUpstreamProjects
 import com.didiglobal.booster.kotlinx.file
+import com.didiglobal.booster.task.analyser.AnalysisTask
 import com.didiglobal.booster.task.analyser.Build
 import com.didiglobal.booster.task.analyser.performance.reporting.PerformanceReports
 import com.didiglobal.booster.task.analyser.performance.reporting.PerformanceReportsImpl
 import com.didiglobal.booster.transform.artifacts
 import groovy.lang.Closure
 import org.gradle.api.Action
-import org.gradle.api.DefaultTask
-import org.gradle.api.reporting.Reporting
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.util.ClosureBackedAction
-import java.io.File
 
 /**
  * Represents a task for performance analysing
  *
  * @author johnsonlee
  */
-open class PerformanceAnalysisTask : DefaultTask(), Reporting<PerformanceReports> {
-
-    @get:Internal
-    lateinit var variant: BaseVariant
-
-    @get:Internal
-    lateinit var supplier: () -> File
-
-    @get:Input
-    val variantName: String
-        get() = variant.name
+open class PerformanceAnalysisTask : AnalysisTask<PerformanceReports>() {
 
     @get:Internal
     val _reports: PerformanceReports by lazy {
         project.objects.newInstance(PerformanceReportsImpl::class.java, this)
     }
+
+    override fun getDescription(): String = "Analyses performance issues for Android projects"
 
     override fun getReports(): PerformanceReports = _reports
 
@@ -51,7 +41,7 @@ open class PerformanceAnalysisTask : DefaultTask(), Reporting<PerformanceReports
     }
 
     @TaskAction
-    fun analyse() {
+    override fun analyse() {
         if ((!reports.html.isEnabled) && (!reports.dot.isEnabled) && (!reports.json.isEnabled)) {
             logger.warn("""
                 Please enable reference analysis reports with following configuration:
@@ -67,20 +57,11 @@ open class PerformanceAnalysisTask : DefaultTask(), Reporting<PerformanceReports
             return
         }
 
-        val classpath = supplier().let {
-            if (it.isDirectory) {
-                it.listFiles()?.toList() ?: emptyList()
-            } else {
-                listOf(it)
-            }
-        }.filter {
-            it.isDirectory || it.extension.run {
-                equals("class", true) || equals("jar", true)
-            }
-        }
-
+        val variant = requireNotNull(this.variant)
+        val classpath = project.getJars(variant) + project.getUpstreamProjects(true, variant).map {
+            it.getJars(variant)
+        }.flatten()
         val output = project.projectDir.file("build", "reports", Build.ARTIFACT, variant.dirName)
-
         PerformanceAnalyser(variant.extension.bootClasspath, classpath, variant.artifacts, project.properties).analyse(output)
     }
 
