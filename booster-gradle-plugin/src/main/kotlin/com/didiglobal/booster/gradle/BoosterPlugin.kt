@@ -4,6 +4,7 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
+import com.didiglobal.booster.task.spi.VariantProcessor
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -29,18 +30,18 @@ class BoosterPlugin : Plugin<Project> {
             else -> emptyList<BaseVariant>()
         }.takeIf<Collection<BaseVariant>>(Collection<BaseVariant>::isNotEmpty)?.let { variants ->
             android.registerTransform(BoosterTransform.newInstance(project))
+            val processors = loadVariantProcessors(project)
             if (project.state.executed) {
-                project.setup(variants)
+                setup(variants, processors)
             } else {
                 project.afterEvaluate {
-                    project.setup(variants)
+                    setup(variants, processors)
                 }
             }
         }
     }
 
-    private fun Project.setup(variants: Collection<BaseVariant>) {
-        val processors = loadVariantProcessors(this)
+    private fun setup(variants: Collection<BaseVariant>, processors: List<VariantProcessor>) {
         variants.forEach { variant ->
             processors.forEach { processor ->
                 processor.process(variant)
