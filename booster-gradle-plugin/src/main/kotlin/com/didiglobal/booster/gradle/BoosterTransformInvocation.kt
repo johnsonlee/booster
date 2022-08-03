@@ -17,6 +17,7 @@ import com.didiglobal.booster.kotlinx.red
 import com.didiglobal.booster.transform.AbstractKlassPool
 import com.didiglobal.booster.transform.ArtifactManager
 import com.didiglobal.booster.transform.Collector
+import com.didiglobal.booster.transform.KlassPool
 import com.didiglobal.booster.transform.TransformContext
 import com.didiglobal.booster.transform.Transformer
 import com.didiglobal.booster.transform.artifacts
@@ -43,44 +44,48 @@ internal class BoosterTransformInvocation(
         private val transform: BoosterTransform
 ) : TransformInvocation by delegate, TransformContext, ArtifactManager {
 
-    private val outputs = CopyOnWriteArrayList<File>()
+    private val outputs: MutableList<File> by lazy(::CopyOnWriteArrayList)
 
-    private val collectors = CopyOnWriteArrayList<Collector<*>>()
+    private val collectors: MutableList<Collector<*>> by lazy (::CopyOnWriteArrayList)
 
     /*
      * Preload transformers as List to fix NoSuchElementException caused by ServiceLoader in parallel mode
      */
-    private val transformers: List<Transformer> = transform.parameter.transformers.map {
-        try {
-            it.getConstructor(ClassLoader::class.java).newInstance(transform.parameter.buildscript.classLoader)
-        } catch (e1: Throwable) {
+    private val transformers: List<Transformer> by lazy {
+        transform.parameter.transformers.map {
             try {
-                it.getConstructor().newInstance()
-            } catch (e2: Throwable) {
-                throw e2.apply {
-                    addSuppressed(e1)
+                it.getConstructor(ClassLoader::class.java).newInstance(transform.parameter.buildscript.classLoader)
+            } catch (e1: Throwable) {
+                try {
+                    it.getConstructor().newInstance()
+                } catch (e2: Throwable) {
+                    throw e2.apply {
+                        addSuppressed(e1)
+                    }
                 }
             }
         }
     }
 
-    override val name: String = delegate.context.variantName
+    override val name: String by lazy(delegate.context::getVariantName)
 
-    override val projectDir: File = project.projectDir
+    override val projectDir: File by lazy(project::getProjectDir)
 
-    override val buildDir: File = project.buildDir
+    override val buildDir: File by lazy(project::getBuildDir)
 
-    override val temporaryDir: File = delegate.context.temporaryDir
+    override val temporaryDir: File by lazy(delegate.context::getTemporaryDir)
 
-    override val reportsDir: File = File(buildDir, "reports").also { it.mkdirs() }
+    override val reportsDir: File by lazy {
+        File(buildDir, "reports").also { it.mkdirs() }
+    }
 
-    override val bootClasspath = delegate.bootClasspath
+    override val bootClasspath: Collection<File> by lazy(delegate::bootClasspath)
 
-    override val compileClasspath = delegate.compileClasspath
+    override val compileClasspath: Collection<File> by lazy(delegate::compileClasspath)
 
-    override val runtimeClasspath = delegate.runtimeClasspath
+    override val runtimeClasspath: Collection<File> by lazy(delegate::runtimeClasspath)
 
-    override val artifacts = this
+    override val artifacts: ArtifactManager = this
 
     override val dependencies: Collection<String> by lazy {
         ResolvedArtifactResults(variant).map {
@@ -88,21 +93,21 @@ internal class BoosterTransformInvocation(
         }
     }
 
-    private val bootKlassPool by lazy {
+    private val bootKlassPool: KlassPool by lazy {
         object : AbstractKlassPool(project.getAndroid<BaseExtension>().bootClasspath) {}
     }
 
-    override val klassPool by lazy {
+    override val klassPool: KlassPool by lazy {
         object : AbstractKlassPool(compileClasspath, bootKlassPool) {}
     }
 
-    override val applicationId = delegate.applicationId
+    override val applicationId: String by lazy(delegate::applicationId)
 
-    override val originalApplicationId = delegate.originalApplicationId
+    override val originalApplicationId: String by lazy(delegate::originalApplicationId)
 
-    override val isDebuggable = variant.buildType.isDebuggable
+    override val isDebuggable: Boolean by lazy (variant.buildType::isDebuggable)
 
-    override val isDataBindingEnabled = delegate.isDataBindingEnabled
+    override val isDataBindingEnabled: Boolean by lazy (delegate::isDataBindingEnabled)
 
     override fun hasProperty(name: String) = project.hasProperty(name)
 
@@ -244,7 +249,8 @@ internal class BoosterTransformInvocation(
     private fun doVerify() {
         outputs.sortedBy(File::nameWithoutExtension).forEach { input ->
             val output = temporaryDir.file(input.name)
-            val rc = input.dex(output, variant.extension.defaultConfig.targetSdkVersion?.apiLevel ?: DexFormat.API_NO_EXTENDED_OPCODES)
+            val rc = input.dex(output, variant.extension.defaultConfig.targetSdkVersion?.apiLevel
+                    ?: DexFormat.API_NO_EXTENDED_OPCODES)
             println("${if (rc != 0) red("✗") else green("✓")} $input")
             output.deleteRecursively()
         }
