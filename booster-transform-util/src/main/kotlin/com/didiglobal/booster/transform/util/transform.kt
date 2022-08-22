@@ -20,6 +20,7 @@ import java.util.concurrent.RejectedExecutionHandler
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.jar.JarFile
+import java.util.jar.Manifest
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
@@ -64,7 +65,9 @@ fun ZipFile.transform(
         runnable.run()
     }))
 
-    entries().asSequence().forEach { entry ->
+    entries().asSequence().filterNot {
+        it.name.startsWith("META-INF/") && it.name.substringAfterLast('.') in JAR_SIGNATURE_EXTENSIONS
+    }.forEach { entry ->
         if (!entries.contains(entry.name)) {
             val zae = entryFactory(entry)
             val stream = InputStreamSupplier {
@@ -130,6 +133,8 @@ fun ZipInputStream.transform(
 ) = output.touch().outputStream().buffered().use {
     transform(it, entryFactory, transformer)
 }
+
+private val JAR_SIGNATURE_EXTENSIONS = setOf("SF", "RSA", "DSA", "EC")
 
 private const val DEFAULT_BUFFER_SIZE = 8 * 1024
 
