@@ -6,8 +6,8 @@ dependencies {
     api project(':booster-annotations')
     api project(':booster-api')
     api project(':booster-transform-util')
-    compileOnly 'com.android.tools.build:gradle:4.0.0'
-    testCompileOnly 'com.android.tools.build:gradle:4.0.0'
+    compileOnly 'com.android.tools.build:gradle:8.0.1'
+    testCompileOnly 'com.android.tools.build:gradle:8.0.1'
 }
 
 apply plugin: 'java-gradle-plugin'
