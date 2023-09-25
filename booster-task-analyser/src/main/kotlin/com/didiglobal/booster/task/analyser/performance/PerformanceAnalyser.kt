@@ -19,6 +19,8 @@ import com.didiglobal.booster.kotlinx.search
 import com.didiglobal.booster.kotlinx.separatorsToSystem
 import com.didiglobal.booster.kotlinx.yellow
 import com.didiglobal.booster.task.analyser.Build
+import com.didiglobal.booster.mergeIdentifiedSourceSetFiles
+import com.didiglobal.booster.relativeResourcePathToAbsolutePath
 import com.didiglobal.booster.transform.ArtifactManager
 import com.didiglobal.booster.transform.asm.args
 import com.didiglobal.booster.transform.asm.className
@@ -45,11 +47,11 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.stream.Collectors
 import javax.xml.parsers.SAXParserFactory
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
-import kotlin.streams.toList
 
 /**
  * @author johnsonlee
@@ -57,6 +59,7 @@ import kotlin.streams.toList
 class PerformanceAnalyser(
         private val providedClasspath: Collection<File>,
         private val compileClasspath: Collection<File>,
+        private val sourceMapFiles: Collection<File>,
         private val artifacts: ArtifactManager,
         private val properties: Map<String, *> = emptyMap<String, Any>()
 ) {
@@ -109,8 +112,12 @@ class PerformanceAnalyser(
         UI_THREAD_ANNOTATIONS.filter(classes::contains).map(::descriptor).toSet()
     }
 
-    constructor(platform: File, compileClasspath: Collection<File>, artifacts: ArtifactManager, properties: Map<String, *> = emptyMap<String, Any>())
-            : this(platform.bootClasspath, compileClasspath, artifacts, properties)
+    private val sourcesMap:Map<String, String> by lazy {
+        mergeIdentifiedSourceSetFiles(sourceMapFiles)
+    }
+
+    constructor(platform: File, compileClasspath: Collection<File>, sourceMap: Collection<File>, artifacts: ArtifactManager, properties: Map<String, *> = emptyMap<String, Any>())
+            : this(platform.bootClasspath, compileClasspath, sourceMap, artifacts, properties)
 
     fun analyse(output: File) {
         this.classes.load().use {
@@ -124,7 +131,7 @@ class PerformanceAnalyser(
     }
 
     private fun analyse() {
-        val classes = this.compileClasses.parallelStream().filter(ClassNode::isInclude).toList()
+        val classes = this.compileClasses.parallelStream().filter(ClassNode::isInclude).collect(Collectors.toList())
         val index = AtomicInteger(0)
         val count = classes.size
         val executor = Executors.newFixedThreadPool(NCPU)
@@ -227,13 +234,12 @@ class PerformanceAnalyser(
             SAXParserFactory.newInstance().newSAXParser().parse(xml, handler)
             handler.views
         }
-
         return this.artifacts.get(ArtifactManager.MERGED_RES).search {
             it.name.startsWith("layout_") && it.name.endsWith(".xml.flat")
         }.map { flat ->
             executor.submit {
                 val header = flat.metadata
-                val xml = header.sourceFile
+                val xml = File(relativeResourcePathToAbsolutePath(header.sourcePath, sourcesMap))
 
                 println("Parsing ${header.resourcePath} ...")
 
