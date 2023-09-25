@@ -1,19 +1,15 @@
 package com.didiglobal.booster.compression
 
-import com.android.build.gradle.api.BaseVariant
+import com.android.build.api.variant.Variant
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.didiglobal.booster.BOOSTER
 import com.didiglobal.booster.command.CommandInstaller
 import com.didiglobal.booster.compression.task.CompressImages
 import com.didiglobal.booster.compression.task.MATCH_ALL_RESOURCES
 import com.didiglobal.booster.compression.task.excludes
-import com.didiglobal.booster.gradle.bundleResourcesTaskProvider
-import com.didiglobal.booster.gradle.isAapt2Enabled
-import com.didiglobal.booster.gradle.mergeResourcesTaskProvider
-import com.didiglobal.booster.gradle.preBuildTaskProvider
-import com.didiglobal.booster.gradle.processResTaskProvider
-import com.didiglobal.booster.gradle.project
+import com.didiglobal.booster.gradle.*
 import com.didiglobal.booster.kotlinx.Wildcard
+import com.didiglobal.booster.kotlinx.capitalized
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownTaskException
@@ -31,19 +27,18 @@ class SimpleCompressionTaskCreator(private val tool: CompressionTool, private va
     override fun getCompressionTaskClass(aapt2: Boolean) = compressor(aapt2)
 
     override fun createCompressionTask(
-            variant: BaseVariant,
-            results: CompressionResults,
-            name: String,
-            supplier: () -> Collection<File>,
-            ignores: Set<Wildcard>,
-            vararg deps: TaskProvider<out Task>
+        variant: Variant,
+        results: CompressionResults,
+        name: String,
+        supplier: () -> Collection<File>,
+        ignores: Set<Wildcard>,
+        vararg deps: TaskProvider<out Task>
     ): TaskProvider<out CompressImages<out CompressionOptions>> {
         val project = variant.project
         val aapt2 = project.isAapt2Enabled
         val install = getCommandInstaller(variant)
 
-        @Suppress("DEPRECATION")
-        return project.tasks.register("compress${variant.name.capitalize()}${name.capitalize()}With${tool.command.name.substringBefore('.').capitalize()}", getCompressionTaskClass(aapt2).java) { task ->
+        return project.tasks.register("compress${variant.name.capitalized()}${name.capitalized()}With${tool.command.name.substringBefore('.').capitalized()}", getCompressionTaskClass(aapt2).java) { task ->
             task.group = BOOSTER
             task.description = "Compress image resources by ${tool.command.name} for ${variant.name}"
             task.dependsOn(variant.preBuildTaskProvider.get())
@@ -60,7 +55,7 @@ class SimpleCompressionTaskCreator(private val tool: CompressionTool, private va
         }
     }
 
-    private fun getCommandInstaller(variant: BaseVariant): TaskProvider<out Task> {
+    private fun getCommandInstaller(variant: Variant): TaskProvider<out Task> {
         return variant.project.tasks.register(getInstallTaskName(variant.name)) {
             it.group = BOOSTER
             it.description = "Install ${tool.command.name} for ${variant.name}"
@@ -84,8 +79,7 @@ class SimpleCompressionTaskCreator(private val tool: CompressionTool, private va
     }
 
     private fun getInstallTaskName(variant: String = ""): String {
-        @Suppress("DEPRECATION")
-        return "install${variant.capitalize()}${tool.command.name.substringBefore('.').capitalize()}"
+        return "install${variant.capitalized()}${tool.command.name.substringBefore('.').capitalized()}"
     }
 
 }

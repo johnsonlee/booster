@@ -2,15 +2,13 @@ package com.didiglobal.booster.task.compression.processed.res
 
 import com.android.SdkConstants
 import com.android.SdkConstants.DOT_PNG
-import com.android.build.gradle.api.BaseVariant
-import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.android.build.api.variant.Variant
 import com.didiglobal.booster.BOOSTER
 import com.didiglobal.booster.compression.CompressionReport
 import com.didiglobal.booster.compression.CompressionResult
 import com.didiglobal.booster.compression.CompressionResults
-import com.didiglobal.booster.gradle.processResTaskProvider
-import com.didiglobal.booster.gradle.processedRes
-import com.didiglobal.booster.gradle.project
+import com.didiglobal.booster.gradle.*
+import com.didiglobal.booster.kotlinx.capitalized
 import com.didiglobal.booster.kotlinx.file
 import com.didiglobal.booster.kotlinx.search
 import com.didiglobal.booster.kotlinx.touch
@@ -19,6 +17,7 @@ import com.didiglobal.booster.transform.util.transform
 import com.google.auto.service.AutoService
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import java.io.File
@@ -33,19 +32,16 @@ import java.util.zip.ZipFile
  * @author johnsonlee
  */
 @AutoService(VariantProcessor::class)
-class ProcessedResourcesCompressionVariantProcessor : VariantProcessor {
+class ProcessedResourcesCompressionVariantProcessor(private val project: Project) : VariantProcessor {
 
-    override fun process(variant: BaseVariant) {
-        @Suppress("DEPRECATION")
-        val compress = variant.project.tasks.register("compress${variant.name.capitalize()}ProcessedRes", CompressProcessedRes::class.java) {
-            it.group = BOOSTER
-            it.description = "Compress the processed resource file for ${variant.name}"
-            it.variant = variant
-        }
-        variant.processResTaskProvider?.let { processRes ->
-            compress.dependsOn(processRes)
-            processRes.configure {
-                it.finalizedBy(compress)
+    override fun process(variant: Variant) {
+        project.tasks.register("compress${variant.name.capitalized()}ProcessedRes", CompressProcessedRes::class.java) { task ->
+            task.group = BOOSTER
+            task.description = "Compress the processed resource file for ${variant.name}"
+            task.variant = variant
+            variant.processResTaskProvider!!.configure { processRes ->
+                task.dependsOn(processRes)
+                processRes.finalizedBy(task)
             }
         }
     }
@@ -55,7 +51,7 @@ class ProcessedResourcesCompressionVariantProcessor : VariantProcessor {
 internal abstract class CompressProcessedRes : DefaultTask() {
 
     @get:Internal
-    lateinit var variant: BaseVariant
+    lateinit var variant: Variant
 
     @TaskAction
     fun compress() {
@@ -66,7 +62,7 @@ internal abstract class CompressProcessedRes : DefaultTask() {
 
 }
 
-private fun BaseVariant.compressProcessedRes(results: CompressionResults) {
+private fun Variant.compressProcessedRes(results: CompressionResults) {
     val files = processedRes.search {
         it.name.startsWith(SdkConstants.FN_RES_BASE) && it.extension == SdkConstants.EXT_RES
     }
@@ -104,7 +100,7 @@ private fun File.repack(shouldCompress: (ZipEntry) -> Boolean) {
  *
  * reduction percentage | file path | reduced size
  */
-private fun BaseVariant.generateReport(results: CompressionResults) {
+private fun Variant.generateReport(results: CompressionResults) {
     val base = project.buildDir.toURI()
     val table = results.map {
         val delta = it.second - it.third
