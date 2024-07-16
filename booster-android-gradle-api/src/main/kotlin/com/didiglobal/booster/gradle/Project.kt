@@ -67,38 +67,50 @@ fun <T> Project.getProperty(name: String, defaultValue: T): T {
     }
 }
 
-fun Project.getUpstreamProjects(
+@JvmOverloads
+inline fun <reified T : ComponentIdentifier> Project.getUpstreamComponentIdentifier(
         transitive: Boolean = true,
-        variant: Variant? = null
-): Set<Project> = getResolvedArtifactResults(transitive, variant).mapNotNull {
-    (it.id.componentIdentifier as? ProjectComponentIdentifier)?.projectPath?.let { projectPath ->
-        rootProject.project(projectPath)
-    }
+        noinline filter: List<Variant>.() -> List<Variant>
+): Set<T> = getResolvedArtifactResults(transitive, filter).mapNotNull {
+    it.id.componentIdentifier as? T
 }.toSet()
 
+@JvmOverloads
+fun Project.getUpstreamProjects(
+        transitive: Boolean = true,
+        filter: List<Variant>.() -> List<Variant>
+): Set<Project> = getUpstreamComponentIdentifier<ProjectComponentIdentifier>(transitive, filter).map {
+    rootProject.project(it.projectPath)
+}.toSet()
+
+@JvmOverloads
 fun Project.getResolvedArtifactResults(
         transitive: Boolean = true,
-        variant: Variant? = null
+        filter: List<Variant>.() -> List<Variant>
 ): Set<ResolvedArtifactResult> = when {
-    variant == null -> emptySet()
     isAndroid -> getResolvedArtifactResultsRecursively(transitive) {
-        filterByVariant(variant).map { v ->
+       variants.filter().map { v ->
             AGP.run { v.getDependencies(transitive) }
         }.flatten()
     }
-
     isJava -> getResolvedArtifactResultsRecursively(transitive) {
         configurations.getByName(RUNTIME_CLASSPATH_CONFIGURATION_NAME).resolvedConfiguration.resolvedArtifacts.map {
             ResolvedArtifactResultImpl(it.id, it.file)
         }
     }
-
     else -> emptySet()
 }.distinctBy {
     it.id.componentIdentifier
 }.toSet()
 
-private fun Project.getResolvedArtifactResultsRecursively(transitive: Boolean, resolve: Project.() -> List<ResolvedArtifactResult>): Set<ResolvedArtifactResult> {
+/**
+ * Returns the resolved artifact results recursively
+ */
+@JvmOverloads
+fun Project.getResolvedArtifactResultsRecursively(
+        transitive: Boolean = true,
+        resolve: Project.() -> List<ResolvedArtifactResult>
+): Set<ResolvedArtifactResult> {
     val stack = Stack<Project>()
     val results = mutableMapOf<ComponentIdentifier, ResolvedArtifactResult>()
 
@@ -125,40 +137,50 @@ private fun Project.getResolvedArtifactResultsRecursively(transitive: Boolean, r
 
 /**
  * Returns the jar files which could be the outputs of the jar task or createFullJar task
- *
- * @param variant The build variant
  */
-fun Project.getJars(variant: Variant? = null): Set<File> = getJarTaskProviders(variant).map {
+fun Project.getJars(
+        filter: List<Variant>.() -> List<Variant>
+): Set<File> = getJarTaskProviders(filter).map {
     it.get().outputs.files
 }.flatten().toSet()
 
-fun Project.getJarTaskProviders(variant: Variant? = null): Collection<TaskProvider<out Task>> = when {
+/**
+ * Returns the jar task provider of all matched variants
+ * * Android Project
+ *   - application: createFullJar
+ *   - library: bundleClasses
+ * * Java Project
+ *   - jar
+ */
+fun Project.getJarTaskProviders(
+        filter: List<Variant>.() -> List<Variant>
+): Collection<TaskProvider<out Task>> = when {
     isAndroid -> when (getAndroidComponentsOrNull<AndroidComponentsExtension<*, *, *>>()) {
-        is LibraryAndroidComponentsExtension -> filterByVariant(variant).mapNotNull(Variant::createFullJarTaskProvider)
-        is ApplicationAndroidComponentsExtension -> filterByVariant(variant).mapNotNull(Variant::bundleClassesTaskProvider)
+        is LibraryAndroidComponentsExtension -> variants.filter().mapNotNull(Variant::createFullJarTaskProvider)
+        is ApplicationAndroidComponentsExtension -> variants.filter().mapNotNull(Variant::bundleClassesTaskProvider)
         else -> emptyList()
     }
-
     isJavaLibrary -> listOf(tasks.named(JavaPlugin.JAR_TASK_NAME))
     else -> emptyList()
 }
 
-private fun Project.filterByVariant(variant: Variant? = null): Collection<Variant> {
-    val variants = when (getAndroidComponentsOrNull<AndroidComponentsExtension<*, *, *>>()) {
-        is ApplicationAndroidComponentsExtension -> plugins.getPlugin(AppPlugin::class.java).variantManager
-        is LibraryAndroidComponentsExtension -> plugins.getPlugin(LibraryPlugin::class.java).variantManager
+val Project.variants: List<Variant>
+    get() = when (getAndroidComponentsOrNull<AndroidComponentsExtension<*, *, *>>()) {
+        is ApplicationAndroidComponentsExtension -> plugins.getPlugin(AppPlugin::class.java)
+        is LibraryAndroidComponentsExtension -> plugins.getPlugin(LibraryPlugin::class.java)
         else -> null
-    }?.mainComponents?.map {
+    }?.variantManager?.mainComponents?.map {
         it.variant
     }?.filterIsInstance<Variant>() ?: emptyList()
 
-    if (null == variant) return variants
+fun Variant?.filterByNameOrBuildType(): List<Variant>.() -> List<Variant> = {
+    val variant = this@filterByNameOrBuildType
 
-    return variants.filter {
+    if (null == variant) this else this.filter {
         it.name == variant.name
     }.takeIf {
         it.isNotEmpty()
-    } ?: variants.filter {
+    } ?: this.filter {
         it.buildType == variant.buildType
     }
 }
