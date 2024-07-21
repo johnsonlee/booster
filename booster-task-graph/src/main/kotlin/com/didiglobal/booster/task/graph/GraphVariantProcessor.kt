@@ -1,10 +1,9 @@
 package com.didiglobal.booster.task.graph
 
-import com.android.build.api.artifact.ScopedArtifact
-import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.Variant
 import com.didiglobal.booster.gradle.getTaskName
 import com.didiglobal.booster.gradle.project
+import com.didiglobal.booster.gradle.registerTask
 import com.didiglobal.booster.graph.Edge
 import com.didiglobal.booster.graph.Graph
 import com.didiglobal.booster.graph.dot.DotGraph
@@ -25,12 +24,8 @@ class GraphVariantProcessor : VariantProcessor {
                 variant.generateTaskGraph()
             }
         }
-        val generateProjectGraph = project.tasks.register(variant.getTaskName("generate", "dependencyGraph"), GenerateProjectGraph::class.java) {
-            it.variant.set(variant)
-        }
-        variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
-                .use(generateProjectGraph)
-                .toGet(ScopedArtifact.CLASSES, GenerateProjectGraph::inputJars, GenerateProjectGraph::inputDirectories)
+
+        variant.registerTask("generate", "dependencyGraph", GenerateProjectGraph.CreationAction())
     }
 
 }
