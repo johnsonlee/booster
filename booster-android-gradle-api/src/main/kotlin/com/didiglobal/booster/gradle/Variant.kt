@@ -246,6 +246,11 @@ val Variant.symbolListWithPackageName: FileCollection
         symbolListWithPackageName
     }
 
+val Variant.localAndroidResources: FileCollection
+    get() = AGP.run {
+        localAndroidResources
+    }
+
 val Variant.allArtifacts: Map<String, FileCollection>
     get() = AGP.run {
         allArtifacts
@@ -260,3 +265,50 @@ val Variant.isPrecompileDependenciesResourcesEnabled: Boolean
     get() = AGP.run {
         isPrecompileDependenciesResourcesEnabled
     }
+
+val Variant.isDebuggable: Boolean
+    get() = AGP.run {
+        isDebuggable
+    }
+
+/**
+ * Filter variants by variant name
+ */
+fun Variant?.filterByName(): List<Variant>.() -> List<Variant> = {
+    val variant = this@filterByName
+
+    if (null == variant) this else this.filter {
+        it.name == variant.name
+    }
+}
+
+/**
+ * Filter variants by build type
+ */
+fun Variant?.filterByBuildType(): List<Variant>.() -> List<Variant> = {
+    val variant = this@filterByBuildType
+
+    if (null == variant) this else this.filter {
+        it.buildType == variant.buildType
+    }
+}
+
+/**
+ * Filter variants by flavor name
+ */
+fun Variant?.filterByFlavorName(): List<Variant>.() -> List<Variant> = {
+    val variant = this@filterByFlavorName
+
+    if (null == variant) this else this.filter {
+        it.flavorName == variant.flavorName
+    }
+}
+
+/**
+ * Filter variants by variant name or build type
+ */
+fun Variant?.filterByNameOrBuildType(): List<Variant>.() -> List<Variant> = {
+    filterByName().invoke(this).takeIf {
+        it.isNotEmpty()
+    } ?: filterByBuildType().invoke(this)
+}
