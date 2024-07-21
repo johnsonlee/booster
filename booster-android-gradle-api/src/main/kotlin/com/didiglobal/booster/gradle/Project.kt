@@ -67,19 +67,40 @@ fun <T> Project.getProperty(name: String, defaultValue: T): T {
     }
 }
 
+/**
+ * Returns the local android resources or empty list if the project is not an android project
+ */
+val Project.localAndroidResources: List<File>
+    get() = when {
+        isAndroid -> project.variants.mapNotNull(Variant::localAndroidResources).flatten()
+        else -> emptyList()
+    }
+
+/**
+ * Returns the upstream artifacts of the target project, the dependencies can be filtered based on the target
+ * project’s variant, such as filtering the dependencies corresponding to the `debug` variant of the target project.
+ *
+ * @param T the result of transform function
+ * @param transitive whether to resolve the artifacts transitively
+ * @param filter filter the dependencies by variant
+ * @see [filterByNameOrBuildType]
+ */
 @JvmOverloads
-inline fun <reified T : ComponentIdentifier> Project.getUpstreamComponentIdentifier(
+inline fun <reified T> Project.getUpstreamArtifacts(
         transitive: Boolean = true,
-        noinline filter: List<Variant>.() -> List<Variant>
+        noinline filter: List<Variant>.() -> List<Variant>,
+        noinline transform: (ComponentArtifactIdentifier) -> T?
 ): Set<T> = getResolvedArtifactResults(transitive, filter).mapNotNull {
-    it.id.componentIdentifier as? T
+    transform(it.id)
 }.toSet()
 
 @JvmOverloads
 fun Project.getUpstreamProjects(
         transitive: Boolean = true,
         filter: List<Variant>.() -> List<Variant>
-): Set<Project> = getUpstreamComponentIdentifier<ProjectComponentIdentifier>(transitive, filter).map {
+): Set<Project> = getUpstreamArtifacts<ProjectComponentIdentifier>(transitive, filter) {
+    it.componentIdentifier as? ProjectComponentIdentifier
+}.map {
     rootProject.project(it.projectPath)
 }.toSet()
 
@@ -172,18 +193,6 @@ val Project.variants: List<Variant>
     }?.variantManager?.mainComponents?.map {
         it.variant
     }?.filterIsInstance<Variant>() ?: emptyList()
-
-fun Variant?.filterByNameOrBuildType(): List<Variant>.() -> List<Variant> = {
-    val variant = this@filterByNameOrBuildType
-
-    if (null == variant) this else this.filter {
-        it.name == variant.name
-    }.takeIf {
-        it.isNotEmpty()
-    } ?: this.filter {
-        it.buildType == variant.buildType
-    }
-}
 
 private data class ResolvedArtifactResultImpl(
         private val artifactId: ComponentArtifactIdentifier,
