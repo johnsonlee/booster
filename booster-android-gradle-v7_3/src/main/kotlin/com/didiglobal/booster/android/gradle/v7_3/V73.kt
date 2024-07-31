@@ -77,6 +77,7 @@ internal object V73 : AGPInterface {
         return try {
             project.objects.fileCollection().from(artifacts.get(type))
         } catch (e: Throwable) {
+            project.logger.warn(e.message, e)
             project.objects.fileCollection().builtBy(artifacts.get(type))
         }
     }
@@ -86,6 +87,7 @@ internal object V73 : AGPInterface {
         return try {
             project.objects.fileCollection().from(artifacts.getAll(type))
         } catch (e: Throwable) {
+            project.logger.warn(e.message, e)
             project.objects.fileCollection().builtBy(artifacts.getAll(type))
         }
     }
